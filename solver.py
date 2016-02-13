@@ -71,10 +71,15 @@ class Job:
     A job is a game state, parent, and also has a priority for placing
     jobs in a queue for the processes to work on.
     """
-    def __init__(self, state, parent, priority=0):
-        self.state = state
-        self.parent = parent
-        self.priority = priority
+    # A list of possible job types.
+    LOOK_UP = "lookup"
+    DISTRIBUTE = "distribute"
+    CHECK_FOR_UPDATES = "check_for_updates"
+    def __init__(self, game_state, job_type, parent, priority=0):
+        self.game_state = game_state
+        self.job_type   = job_type
+        self.parent     = parent
+        self.priority   = priority
 
     def __cmp__(self, other):
         """ 
@@ -87,13 +92,36 @@ class Process:
     """
     Class that defines the behavior what each process should do
     """
+    ROOT = 0
+    IS_FINISHED = False
+    
+
+    def dispatch(self, job):
+        """
+        Given a particular kind of job, decide what to do with
+        it, this can range from lookup, to distributing, to 
+        checking for recieving.
+        """
+        _dispatch_table = { 
+                Job.LOOK_UP           : self.lookup,
+                Job.DISTRIBUTE        : self.distribute,
+                Job.CHECK_FOR_UPDATES : self.check_for_updates
+        }
+        return _dispatch_table[job.job_type](job.game_state)
+
 
     def run(self):
         """
         Main loop for each process
         """
         # TODO
-        pass
+        while not Process.IS_FINISHED:
+            if self.rank == Process.ROOT:
+                if self.work.qsize() == 0:
+                    Process.IS_FINISHED = comm.bcast(True)
+            job = self.work.get()
+            result = self.dispatch(job)
+            self.add_job(result)
 
     def __init__(self, rank):
         self.rank = rank
@@ -119,7 +147,7 @@ class Process:
         resolved list. Returns the result if this is the case, None
         otherwise.
         """
-        return resolved[game_state.pos]
+        return self.resolved[game_state.pos]
 
     def distribute(self, game_state):
         """
@@ -147,10 +175,14 @@ class Process:
             return True
         return None
 
+    def return_to_parent(self, result):
+        # TODO
+        pass
+
 process = Process(rank)
-if process.rank == 0:
+if process.rank == Process.ROOT:
     initial_gamestate = GameState(initial_position, process.rank)
-    initial_job = Job(process.rank, initial_gamestate)
+    initial_job = Job(process.rank, Job.LOOK_UP, initial_gamestate)
     process.add_job(initial_job)
 
 process.run()
