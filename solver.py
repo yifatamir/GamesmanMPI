@@ -23,12 +23,6 @@ def primitive(x):
 # SOLVER PORTION
 #################################################
 
-#################################################
-# INITIALIZE
-# We need to have the rank0 process start everyt-
-# hing.
-#################################################
-
 from mpi4py import MPI
 import hashlib
 from Queue import PriorityQueue
@@ -83,6 +77,11 @@ class Job:
             CHECK_FOR_UPDATES : 0
     }
 
+    # Keep a special variable for the initial job!
+    # This way you can check if the job you finished was
+    # the initial job. In this case we are done!
+    INITIAL_JOB_ID = -1
+
     def _assign_priority(self):
         self.priority = _priority_table[self.job_type]
 
@@ -127,11 +126,11 @@ class Process:
         """
         # TODO
         while not Process.IS_FINISHED:
+            job = self.work.get()
             if self.rank == Process.ROOT:
                 # How to handle this properly...
                 if self.work.qsize() == 0:
                     Process.IS_FINISHED = comm.bcast(True)
-            job = self.work.get()
             result = self.dispatch(job)
             self.add_job(result)
 
@@ -202,18 +201,40 @@ class Process:
         return None
 
     def send_back(self, job):
-        # TODO
-        pass
+        """
+        Send the job back to the node who asked for the computation
+        to be done.
+        """
+        comm.send(job, cource=job.parent)
+
+    def _res_red(self, res1, res2):
+        """
+        Private method that helps reduce in reduce_results.
+        """
+        # Probably can be done in a "cleaner" way.
+        if res1 == "LOSS" and res2 == "LOSS":
+            return "LOSS"
+        elif res1 == "WIN" or res2 == "WIN":
+            return "WIN"
+        elif res1 == "TIE" or res2 == "TIE":
+            return "TIE"
+        elif res1 == "DRAW" or res2 == "DRAW":
+            return "DRAW"
 
     def reduce_results(self, results):
-        # TODO
-        pass
+        """
+        Given a list of WIN, LOSS, TIE, (DRAW, well maybe for later)
+        determine whether this position in the game tree is a WIN,
+        LOSS, TIE, or DRAW.
+        """
+        # TODO for TIE, DRAW
+        return reduce(results, _res_red)
 
 
 process = Process(rank)
 if process.rank == Process.ROOT:
     initial_gamestate = GameState(initial_position, process.rank)
-    initial_job = Job(process.rank, Job.LOOK_UP, initial_gamestate, -1)
+    initial_job = Job(process.rank, Job.LOOK_UP, initial_gamestate, Job.INITIAL_JOB_ID)
     process.add_job(initial_job)
 
 process.run()
