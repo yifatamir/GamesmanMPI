@@ -72,14 +72,25 @@ class Job:
     jobs in a queue for the processes to work on.
     """
     # A list of possible job types.
-    LOOK_UP = "lookup"
-    DISTRIBUTE = "distribute"
+    LOOK_UP           = "lookup"
+    DISTRIBUTE        = "distribute"
     CHECK_FOR_UPDATES = "check_for_updates"
-    def __init__(self, game_state, job_type, parent, priority=0):
+    SEND_BACK         = "send_back"
+    _priority_table = {
+            LOOK_UP           : 3,
+            SEND_BACK         : 2,
+            DISTRIBUTE        : 1,
+            CHECK_FOR_UPDATES : 0
+    }
+
+    def _assign_priority(self):
+        self.priority = _priority_table[self.job_type]
+
+    def __init__(self, game_state, job_type, parent, job_id):
         self.game_state = game_state
         self.job_type   = job_type
         self.parent     = parent
-        self.priority   = priority
+        self.priority   = self._assign_priority()
 
     def __cmp__(self, other):
         """ 
@@ -93,8 +104,7 @@ class Process:
     Class that defines the behavior what each process should do
     """
     ROOT = 0
-    IS_FINISHED = False
-    
+    IS_FINISHED = False 
 
     def dispatch(self, job):
         """
@@ -105,6 +115,7 @@ class Process:
         _dispatch_table = { 
                 Job.LOOK_UP           : self.lookup,
                 Job.DISTRIBUTE        : self.distribute,
+                Job.SEND_BACK         : self.send_back,
                 Job.CHECK_FOR_UPDATES : self.check_for_updates
         }
         return _dispatch_table[job.job_type](job.game_state)
@@ -117,6 +128,7 @@ class Process:
         # TODO
         while not Process.IS_FINISHED:
             if self.rank == Process.ROOT:
+                # How to handle this properly...
                 if self.work.qsize() == 0:
                     Process.IS_FINISHED = comm.bcast(True)
             job = self.work.get()
@@ -134,6 +146,15 @@ class Process:
         # in the run loop.
         self.sent = []
         self.received = []
+        # Keep a dictionary of "distributed tasks"
+        # Should contain an id associated with the length of task.
+        # For example, you distributed rank 0 has 4, you wish to
+        # distribute 3, 2. Give it an id, like 1 and associate it
+        # with length 2. Then once all the results have been recieved
+        # you can compare the length, and then reduce the results.
+        # solving this particular distributed task.
+        self._distributed = {}
+        self._distributed_id = 0
         # Main process will terminate everyone by bcasting the value of
         # finished to True.
         self.finished = False
@@ -141,13 +162,18 @@ class Process:
     def add_job(self, job):
         self.work.put(job)
 
-    def lookup(self, game_state):
+    def lookup(self, job):
         """
         Takes a GameState object and determines if it is in the 
         resolved list. Returns the result if this is the case, None
         otherwise.
         """
-        return self.resolved[game_state.pos]
+        res = self.resolved[job.game_state.pos]
+        if res:
+            return Job(res, Job.SEND_BACK, self.rank, job.parent, job.job_id)
+        else:
+            self._distributed_id += 1
+            return Job(game_state, Job.DISTRIBUTE, self.rank, self._distributed_id)
 
     def distribute(self, game_state):
         """
@@ -171,18 +197,23 @@ class Process:
         # Probe for any sources
         if comm.iprobe(source=comm.MPI_ANY_SOURCE):
             # If there are sources recieve them.
-            self.received.append(comm.irecv(source=comm.MPI_ANY_SOURCE))
+            self.received.append(comm.recv(source=comm.MPI_ANY_SOURCE))
             return True
         return None
 
-    def return_to_parent(self, result):
+    def send_back(self, job):
         # TODO
         pass
+
+    def reduce_results(self, results):
+        # TODO
+        pass
+
 
 process = Process(rank)
 if process.rank == Process.ROOT:
     initial_gamestate = GameState(initial_position, process.rank)
-    initial_job = Job(process.rank, Job.LOOK_UP, initial_gamestate)
+    initial_job = Job(process.rank, Job.LOOK_UP, initial_gamestate, -1)
     process.add_job(initial_job)
 
 process.run()
