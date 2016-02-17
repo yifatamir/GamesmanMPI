@@ -1,31 +1,13 @@
 #################################################
-# 4 - 1 Portion
-# TODO: Move out of this file
-#################################################
-
-LOSS, WIN, TIE, DRAW = "LOSS", "WIN", "TIE", "DRAW"
-
-initial_position = 4
-
-def gen_moves(x):
-    if x == 1:
-        return [-1]
-    return [-1, -2]
-
-def do_move(x, move):
-    return x + move
-
-def primitive(x):
-    if x <= 0:
-        return LOSS
-
-#################################################
 # SOLVER PORTION
 #################################################
 
 from mpi4py import MPI
 import hashlib
-from Queue import PriorityQueue
+import sys
+from queue import PriorityQueue
+
+game_module = __import__(sys.argv[1].replace('.py', ''))
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -233,7 +215,7 @@ class Process:
 
 process = Process(rank)
 if process.rank == Process.ROOT:
-    initial_gamestate = GameState(initial_position, process.rank)
+    initial_gamestate = GameState(game_module.initial_position, process.rank)
     initial_job = Job(process.rank, Job.LOOK_UP, initial_gamestate, Job.INITIAL_JOB_ID)
     process.add_job(initial_job)
 
