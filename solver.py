@@ -37,14 +37,14 @@ class GameState:
         children positions.
         """
         # Raw, in other words, not a GameState object.
-        raw_states = map(lambda m: do_moves(pos, m), gen_moves(pos))
+        raw_states = map(lambda m: do_move(pos, m), gen_moves(pos))
         # Wrapped, in other words, a GameState object.
-        wrapped_states = map(lambda m: GameState(m, rank))
+        wrapped_states = map(lambda m: GameState(m, rank), raw_states)
         return wrapped_states
 
 class Job:
     """
-    A job is a game state, parent, and also has a priority for placing
+    A job has a game state, parent, type, and also has a priority for placing
     jobs in a queue for the processes to work on.
     """
     # A list of possible job types.
