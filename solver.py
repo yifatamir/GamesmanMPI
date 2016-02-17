@@ -71,10 +71,10 @@ class Job:
     CHECK_FOR_UPDATES = "check_for_updates"
     SEND_BACK         = "send_back"
     _priority_table = {
-            LOOK_UP           : 3,
-            SEND_BACK         : 2,
-            DISTRIBUTE        : 1,
-            CHECK_FOR_UPDATES : 0
+            LOOK_UP           : 0,
+            SEND_BACK         : 1,
+            DISTRIBUTE        : 2,
+            CHECK_FOR_UPDATES : 3
     }
 
     # Keep a special variable for the initial job!
@@ -92,7 +92,7 @@ class Job:
         self.priority   = self._assign_priority()
 
     def __cmp__(self, other):
-        """ 
+        """
         Compares two Job objects based off the priority
         they have.
         """
@@ -103,15 +103,15 @@ class Process:
     Class that defines the behavior what each process should do
     """
     ROOT = 0
-    IS_FINISHED = False 
+    IS_FINISHED = False
 
     def dispatch(self, job):
         """
         Given a particular kind of job, decide what to do with
-        it, this can range from lookup, to distributing, to 
+        it, this can range from lookup, to distributing, to
         checking for recieving.
         """
-        _dispatch_table = { 
+        _dispatch_table = {
                 Job.LOOK_UP           : self.lookup,
                 Job.DISTRIBUTE        : self.distribute,
                 Job.SEND_BACK         : self.send_back,
@@ -163,7 +163,7 @@ class Process:
 
     def lookup(self, job):
         """
-        Takes a GameState object and determines if it is in the 
+        Takes a GameState object and determines if it is in the
         resolved list. Returns the result if this is the case, None
         otherwise.
         """
