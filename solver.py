@@ -162,7 +162,7 @@ class Process:
         # Should contain an id associated with the length of task.
         # For example, you distributed rank 0 has 4, you wish to
         # distribute 3, 2. Give it an id, like 1 and associate it
-        # with length 2. Then once all the results have been recieved
+        # with length 2. Then once all the results have been received
         # you can compare the length, and then reduce the results.
         # solving this particular distributed task.
         self._distributed = {}
@@ -190,7 +190,7 @@ class Process:
         except KeyError: # Not in dictionary.
             # Try to see if it is_primitive:
             if job.game_state.is_primitive():
-                self.resolved[job.game_state.pos] = game_state.state
+                self.resolved[job.game_state.pos] = job.game_state.state
                 return Job(Job.SEND_BACK, job.game_state.state, self.rank, job.job_id)
             self._distributed_id += 1
             return Job(Job.DISTRIBUTE, job.game_state, self.rank, self._distributed_id)
@@ -218,8 +218,8 @@ class Process:
         # Probe for any sources
         if comm.iprobe(source=MPI.ANY_SOURCE):
             # If there are sources recieve them.
-            self.received.extend(comm.recv(source=MPI.ANY_SOURCE))
-            for job in self.recieved:
+            self.received.append(comm.recv(source=MPI.ANY_SOURCE))
+            for job in self.received:
                 self.add_job(job)
             
             self.recieved = [] # Clear recieved.
