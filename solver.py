@@ -38,7 +38,7 @@ class GameState:
         Returns the appropriate hash of a given GameState object.
         Based off of the value of it's position.
         """
-        return int(hashlib(self.pos).hexdigest(), 16) % size
+        return int(hashlib.md5(str(self.pos)).hexdigest(), 16) % size
 
     def expand(self):
         """
