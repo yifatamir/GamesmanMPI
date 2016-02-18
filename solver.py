@@ -94,9 +94,9 @@ class Job:
     def _assign_priority(self):
         self.priority = self._priority_table[self.job_type]
 
-    def __init__(self, game_state, job_type, parent, job_id):
-        self.game_state = game_state
+    def __init__(self, job_type, game_state=None, parent=None, job_id=None):
         self.job_type   = job_type
+        self.game_state = game_state
         self.parent     = parent
         self.priority   = self._assign_priority()
 
@@ -136,10 +136,13 @@ class Process:
         # TODO
         while not Process.IS_FINISHED:
             job = self.work.get()
-            if self.rank == Process.ROOT:
-                # How to handle this properly...
-                if self.work.qsize() == 0:
+            if self.work.qsize() == 0:
+                # Either we are done...
+                if self.rank == Process.ROOT:
                     Process.IS_FINISHED = comm.bcast(True)
+                # ... or we must wait.
+                else:
+                    self.add_job(Job(Job.CHECK_FOR_UPDATES))
             result = self.dispatch(job)
             self.add_job(result)
 
@@ -182,28 +185,29 @@ class Process:
         """
         try:
             res = self.resolved[job.game_state.pos]
-            return Job(res, Job.SEND_BACK, self.rank, job.parent, job.job_id)
+            return Job(Job.SEND_BACK, res, self.rank, job.parent, job.job_id)
         except KeyError: # Not in dictionary.
             # Try to see if it is_primitive:
             if job.game_state.is_primitive():
                 self.resolved[job.game_state.pos] = game_state.state
-                return Job(job.game_state.state, Job.SEND_BACK, self.rank, self._distributed_id)
+                return Job(Job.SEND_BACK, job.game_state.state, self.rank, self._distributed_id)
             self._distributed_id += 1
-            return Job(job.game_state, Job.DISTRIBUTE, self.rank, self._distributed_id)
+            return Job(Job.DISTRIBUTE, job.game_state, self.rank, self._distributed_id)
 
-    def distribute(self, game_state):
+    def distribute(self, job):
         """
         Given a gamestate distributes the results to the appropriate
         children.
         """
-        children = game_state.expand()
+        children = job.game_state.expand()
         # Keep a list of the requests made by isend. Something may
         # fail, so we will need to worry about error checking at
         # some point.
         for child in children:
-            self.sent.append(comm.isend(child, dest = child.get_hash()))
+            job = Job(Job.LOOKUP, child, self.rank, self._distribute_id)
+            self.sent.append(comm.isend(job,  dest = child.get_hash()))
 
-    def check_for_updates(self):
+    def check_for_updates(self, job):
         """
         Checks if there is new data from other Processes that needs to
         be received and prepares to recieve it if there is any new data.
@@ -214,8 +218,8 @@ class Process:
         if comm.iprobe(source=comm.MPI_ANY_SOURCE):
             # If there are sources recieve them.
             self.received.append(comm.recv(source=comm.MPI_ANY_SOURCE))
-            return True
-        return None
+            for job in self.recieved:
+                self.add_job(job)
 
     def send_back(self, job):
         """
@@ -251,7 +255,7 @@ class Process:
 process = Process(rank)
 if process.rank == Process.ROOT:
     initial_gamestate = GameState(game_module.initial_position)
-    initial_job = Job(initial_gamestate, Job.LOOK_UP, process.rank, Job.INITIAL_JOB_ID)
+    initial_job = Job(Job.LOOK_UP, initial_gamestate, process.rank, Job.INITIAL_JOB_ID)
     process.add_job(initial_job)
 
 process.run()
