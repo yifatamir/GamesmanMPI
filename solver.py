@@ -53,6 +53,23 @@ class GameState:
         wrapped_states = map(lambda m: GameState(m, rank), raw_states)
         return wrapped_states
 
+    @property
+    def state(self):
+        """
+        Determines whether the state is a:
+        WIN, LOSS, TIE, DRAW or UNDECIDED
+        """
+        return primitive(self.pos)
+    
+    def is_primitive(self):
+        """
+        Determines the difference between
+        WLTD and UNDECIDED
+        """
+        # TODO: Don't violate abstraction barrier...
+        # Notably: ("WIN", "LOSS", "TIE", "DRAW")
+        return self.state in ("WIN", "LOSS", "TIE", "DRAW")
+
 class Job:
     """
     A job has a game state, parent, type, and also has a priority for placing
@@ -76,7 +93,7 @@ class Job:
     INITIAL_JOB_ID = -1
 
     def _assign_priority(self):
-        self.priority = _priority_table[self.job_type]
+        self.priority = self._priority_table[self.job_type]
 
     def __init__(self, game_state, job_type, parent, job_id):
         self.game_state = game_state
@@ -164,6 +181,9 @@ class Process:
         if res:
             return Job(res, Job.SEND_BACK, self.rank, job.parent, job.job_id)
         else:
+            # Try to see if it is_primitive:
+            if job.game_state.is_primitive():
+                return Job(game_state.state, Job.SEND_BACK, self.rank, self._distributed_id)
             self._distributed_id += 1
             return Job(game_state, Job.DISTRIBUTE, self.rank, self._distributed_id)
 
