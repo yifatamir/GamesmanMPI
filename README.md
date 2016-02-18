@@ -6,11 +6,11 @@
 ## Loading a Game
 Games to be solved are loaded via the command line, with the following syntax:
 ```
-python solver.py <your game file>
+mpiexec -n <number of processes> python solver.py <your game file>
 ```
 For example, you could load our example game, Four-To-One, by running
 ```
-python solver.py four_to_one.py
+mpiexec -n 5 python solver.py four_to_one.py
 ```
 
 Your game file must follow the conventions outlined in the API 
