@@ -126,7 +126,7 @@ class Process:
                 Job.SEND_BACK         : self.send_back,
                 Job.CHECK_FOR_UPDATES : self.check_for_updates
         }
-        return _dispatch_table[job.job_type](job.game_state)
+        return _dispatch_table[job.job_type](job)
 
 
     def run(self):
@@ -250,7 +250,7 @@ class Process:
 process = Process(rank)
 if process.rank == Process.ROOT:
     initial_gamestate = GameState(game_module.initial_position)
-    initial_job = Job(process.rank, Job.LOOK_UP, initial_gamestate, Job.INITIAL_JOB_ID)
+    initial_job = Job(initial_gamestate, Job.LOOK_UP, process.rank, Job.INITIAL_JOB_ID)
     process.add_job(initial_job)
 
 process.run()
