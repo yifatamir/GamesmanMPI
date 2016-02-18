@@ -1,31 +1,24 @@
 #################################################
-# 4 - 1 Portion
-# TODO: Move out of this file
-#################################################
-
-LOSS, WIN, TIE, DRAW = "LOSS", "WIN", "TIE", "DRAW"
-
-initial_position = 4
-
-def gen_moves(x):
-    if x == 1:
-        return [-1]
-    return [-1, -2]
-
-def do_move(x, move):
-    return x + move
-
-def primitive(x):
-    if x <= 0:
-        return LOSS
-
-#################################################
 # SOLVER PORTION
 #################################################
 
 from mpi4py import MPI
 import hashlib
+import sys
+import inspect
 from Queue import PriorityQueue
+
+# Import game definition from file specified in command line
+game_module = __import__(sys.argv[1].replace('.py', ''))
+
+# Make sure the game is properly defined
+assert(hasattr(game_module, 'initial_position'))
+assert(hasattr(game_module, 'do_move'))
+assert(hasattr(game_module, 'gen_moves'))
+assert(hasattr(game_module, 'primitive'))
+assert(inspect.isfunction(game_module.do_move))
+assert(inspect.isfunction(game_module.gen_moves))
+assert(inspect.isfunction(game_module.primitive))
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -55,7 +48,7 @@ class GameState:
         children positions.
         """
         # Raw, in other words, not a GameState object.
-        raw_states = map(lambda m: do_move(pos, m), gen_moves(pos))
+        raw_states = map(lambda m: game_module.do_move(pos, m), game_module.gen_moves(pos))
         # Wrapped, in other words, a GameState object.
         wrapped_states = map(lambda m: GameState(m, rank), raw_states)
         return wrapped_states
@@ -233,7 +226,7 @@ class Process:
 
 process = Process(rank)
 if process.rank == Process.ROOT:
-    initial_gamestate = GameState(initial_position, process.rank)
+    initial_gamestate = GameState(game_module.initial_position, process.rank)
     initial_job = Job(process.rank, Job.LOOK_UP, initial_gamestate, Job.INITIAL_JOB_ID)
     process.add_job(initial_job)
 
