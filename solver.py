@@ -97,6 +97,7 @@ class Job:
         self.job_type   = job_type
         self.game_state = game_state
         self.parent     = parent
+        self.job_id     = job_id
         self.priority   = self._assign_priority()
 
     def __cmp__(self, other):
