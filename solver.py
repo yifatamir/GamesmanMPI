@@ -32,7 +32,6 @@ class GameState:
     """
     def __init__(self, pos, parent):
         self.pos    = pos
-        self.parent = parent
 
     def get_hash(self):
         """
@@ -50,7 +49,7 @@ class GameState:
         # Raw, in other words, not a GameState object.
         raw_states = map(lambda m: game_module.do_move(pos, m), game_module.gen_moves(pos))
         # Wrapped, in other words, a GameState object.
-        wrapped_states = map(lambda m: GameState(m, rank), raw_states)
+        wrapped_states = map(lambda m: GameState(m), raw_states)
         return wrapped_states
 
     @property
@@ -246,7 +245,7 @@ class Process:
 
 process = Process(rank)
 if process.rank == Process.ROOT:
-    initial_gamestate = GameState(game_module.initial_position, process.rank)
+    initial_gamestate = GameState(game_module.initial_position)
     initial_job = Job(process.rank, Job.LOOK_UP, initial_gamestate, Job.INITIAL_JOB_ID)
     process.add_job(initial_job)
 
