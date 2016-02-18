@@ -46,7 +46,7 @@ class GameState:
         children positions.
         """
         # Raw, in other words, not a GameState object.
-        raw_states = map(lambda m: game_module.do_move(pos, m), game_module.gen_moves(pos))
+        raw_states = map(lambda m: game_module.do_move(self.pos, m), game_module.gen_moves(self.pos))
         # Wrapped, in other words, a GameState object.
         wrapped_states = map(lambda m: GameState(m), raw_states)
         return wrapped_states
@@ -134,7 +134,6 @@ class Process:
         """
         # TODO
         while not Process.IS_FINISHED:
-            job = self.work.get()
             if self.work.qsize() == 0:
                 # Either we are done...
                 if self.rank == Process.ROOT:
@@ -142,6 +141,7 @@ class Process:
                 # ... or we must wait.
                 else:
                     self.add_job(Job(Job.CHECK_FOR_UPDATES))
+            job = self.work.get()
             result = self.dispatch(job)
             self.add_job(result)
 
