@@ -216,10 +216,9 @@ class Process:
         # Probe for any sources
         if comm.iprobe(source=comm.MPI_ANY_SOURCE):
             # If there are sources recieve them.
-            self.received.append(comm.recv(source=comm.MPI_ANY_SOURCE))
-            for jobs in self.recieved:
-                for job in jobs:
-                    self.add_job(job)
+            self.received.extend(comm.recv(source=comm.MPI_ANY_SOURCE))
+            for job in self.recieved:
+                self.add_job(job)
             
             self.recieved = [] # Clear recieved.
 
