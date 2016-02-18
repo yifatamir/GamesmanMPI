@@ -38,7 +38,7 @@ class GameState:
         Returns the appropriate hash of a given GameState object.
         Based off of the value of it's position.
         """
-        return int(hashlib.md5(str(self.pos)).hexdigest(), 16) % size
+        return int(hashlib.md5(str(self.pos).encode('utf-8')).hexdigest(), 16) % size
 
     def expand(self):
         """
@@ -98,14 +98,14 @@ class Job:
         self.game_state = game_state
         self.parent     = parent
         self.job_id     = job_id
-        self.priority   = self._assign_priority()
+        self._assign_priority()
 
-    def __cmp__(self, other):
+    def __lt__(self, other):
         """
         Compares two Job objects based off the priority
         they have.
         """
-        return cmp(self.priority, other.priority)
+        return self.priority < other.priority
 
 class Process:
     """
@@ -222,7 +222,7 @@ class Process:
             self.received.append(comm.recv(source=MPI.ANY_SOURCE))
             for job in self.received:
                 self.add_job(job)
-            
+
             self.recieved = [] # Clear recieved.
 
     def send_back(self, job):
