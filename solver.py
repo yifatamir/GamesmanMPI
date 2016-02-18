@@ -30,7 +30,7 @@ class GameState:
     by the user, just makes things easier for the
     framework.
     """
-    def __init__(self, pos, parent):
+    def __init__(self, pos):
         self.pos    = pos
 
     def get_hash(self):
