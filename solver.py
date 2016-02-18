@@ -180,15 +180,16 @@ class Process:
         resolved list. Returns the result if this is the case, None
         otherwise.
         """
-        res = self.resolved[job.game_state.pos]
-        if res:
+        try:
+            res = self.resolved[job.game_state.pos]
             return Job(res, Job.SEND_BACK, self.rank, job.parent, job.job_id)
-        else:
+        except KeyError: # Not in dictionary.
             # Try to see if it is_primitive:
             if job.game_state.is_primitive():
-                return Job(game_state.state, Job.SEND_BACK, self.rank, self._distributed_id)
+                self.resolved[job.game_state.pos] = game_state.state
+                return Job(job.game_state.state, Job.SEND_BACK, self.rank, self._distributed_id)
             self._distributed_id += 1
-            return Job(game_state, Job.DISTRIBUTE, self.rank, self._distributed_id)
+            return Job(job.game_state, Job.DISTRIBUTE, self.rank, self._distributed_id)
 
     def distribute(self, game_state):
         """
