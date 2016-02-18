@@ -168,6 +168,10 @@ class Process:
         self.finished = False
 
     def add_job(self, job):
+        """
+        Adds a job to the priority queue so it may be worked on at an
+        appropriate time
+        """
         self.work.put(job)
 
     def lookup(self, job):
