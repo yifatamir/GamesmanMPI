@@ -214,9 +214,9 @@ class Process:
         Returns None if there is nothing to be recieved.
         """
         # Probe for any sources
-        if comm.iprobe(source=comm.MPI_ANY_SOURCE):
+        if comm.iprobe(source=MPI.ANY_SOURCE):
             # If there are sources recieve them.
-            self.received.extend(comm.recv(source=comm.MPI_ANY_SOURCE))
+            self.received.extend(comm.recv(source=MPI.ANY_SOURCE))
             for job in self.recieved:
                 self.add_job(job)
             
