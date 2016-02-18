@@ -230,7 +230,7 @@ class Process:
         Send the job back to the node who asked for the computation
         to be done.
         """
-        comm.send(job, cource=job.parent)
+        comm.send(job, source=job.parent)
 
     def _res_red(self, res1, res2):
         """
