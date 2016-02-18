@@ -58,8 +58,8 @@ class GameState:
         Determines whether the state is a:
         WIN, LOSS, TIE, DRAW or UNDECIDED
         """
-        return primitive(self.pos)
-    
+        return game_module.primitive(self.pos)
+
     def is_primitive(self):
         """
         Determines the difference between
