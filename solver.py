@@ -143,6 +143,8 @@ class Process:
                     self.add_job(Job(Job.CHECK_FOR_UPDATES))
             job = self.work.get()
             result = self.dispatch(job)
+            if result is None: # Check for updates returns nothing.
+                continue
             self.add_job(result)
 
     def __init__(self, rank):
@@ -203,7 +205,7 @@ class Process:
         # fail, so we will need to worry about error checking at
         # some point.
         for child in children:
-            job = Job(Job.LOOKUP, child, self.rank, self._distribute_id)
+            job = Job(Job.LOOK_UP, child, self.rank, self._distributed_id)
             self.sent.append(comm.isend(job,  dest = child.get_hash()))
 
     def check_for_updates(self, job):
