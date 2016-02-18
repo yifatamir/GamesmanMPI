@@ -31,7 +31,7 @@ class GameState:
     framework.
     """
     def __init__(self, pos):
-        self.pos    = pos
+        self.pos = pos
 
     def get_hash(self):
         """
@@ -39,7 +39,6 @@ class GameState:
         Based off of the value of it's position.
         """
         return int(hashlib(self.pos).hexdigest(), 16) % size
-
 
     def expand(self):
         """
