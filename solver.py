@@ -189,7 +189,7 @@ class Process:
             # Try to see if it is_primitive:
             if job.game_state.is_primitive():
                 self.resolved[job.game_state.pos] = game_state.state
-                return Job(Job.SEND_BACK, job.game_state.state, self.rank, self._distributed_id)
+                return Job(Job.SEND_BACK, job.game_state.state, self.rank, job.job_id)
             self._distributed_id += 1
             return Job(Job.DISTRIBUTE, job.game_state, self.rank, self._distributed_id)
 
