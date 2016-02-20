@@ -193,7 +193,7 @@ class Process:
         """
         Occurs when the root node has detected that the game has been solved
         """
-        IS_FINISHED = True
+        self.IS_FINISHED = True
 
     def lookup(self, job):
         """
