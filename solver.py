@@ -8,7 +8,7 @@ from mpi4py import MPI
 import hashlib
 import sys
 import inspect
-from queue import PriorityQueue
+from Queue import PriorityQueue
 
 # Import game definition from file specified in command line
 game_module = __import__(sys.argv[1].replace('.py', ''))
@@ -141,16 +141,16 @@ class Process:
         # TODO
         while not Process.IS_FINISHED:
             if self.work.qsize() == 0:
-                # Either we are done...
+                """
+                Need to figure out where to put this...
                 if self.rank == Process.ROOT:
                     if DEBUG:
                         print("Finished")
                     fin = Job(Job.FINISHED)
                     for r in range(0, size):
                         comm.isend(fin,  dest = r)
-                # ... or we must wait.
-                else:
-                    self.add_job(Job(Job.CHECK_FOR_UPDATES))
+                """
+                self.add_job(Job(Job.CHECK_FOR_UPDATES))
             job = self.work.get()
             result = self.dispatch(job)
             if result is None: # Check for updates returns nothing.
@@ -206,7 +206,7 @@ class Process:
             res = self.resolved[job.game_state.pos]
             if DEBUG:
                 print(str(job.game_state.pos) + " has been resolved")
-            return Job(Job.SEND_BACK, res, self.rank, job.parent, job.job_id)
+            return Job(Job.SEND_BACK, res, job.parent, job.job_id)
         except KeyError: # Not in dictionary.
             # Try to see if it is_primitive:
             if job.game_state.is_primitive():
@@ -256,7 +256,10 @@ class Process:
         to be done.
         """
         if DEBUG:
-            print(str(rank) + " is sending back " + str(job.game_state.pos))
+            if type(job.game_state is str):
+                print(str(rank) + " is sending back " + job.game_state)
+            else:
+                print(str(rank) + " is sending back " + str(job.game_state.pos))
         comm.send(job, dest=job.parent)
 
     def _res_red(self, res1, res2):
