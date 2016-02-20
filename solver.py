@@ -120,6 +120,8 @@ class Process:
     ROOT = 0
     IS_FINISHED = False
 
+    INITIAL_POS = game_module.initial_position
+
     def dispatch(self, job):
         """
         Given a particular kind of job, decide what to do with
@@ -143,15 +145,13 @@ class Process:
         # TODO
         while not Process.IS_FINISHED:
             if self.work.qsize() == 0:
-                """
-                Need to figure out where to put this...
-                if self.rank == Process.ROOT:
-                logging.info('Finished')
-                fin = Job(Job.FINISHED)
-                for r in range(0, size):
-                    comm.isend(fin,  dest = r)
-                """
-                self.add_job(Job(Job.CHECK_FOR_UPDATES))
+                if self.rank == 0 and Process.INITIAL_POS in self.resolved:
+                    logging.info('Finished')
+                    fin = Job(Job.FINISHED)
+                    for r in range(size):
+                        comm.isend(fin, dest = r)
+                else:
+                    self.add_job(Job(Job.CHECK_FOR_UPDATES))
             job = self.work.get()
             result = self.dispatch(job)
             if result is None: # Check for updates returns nothing.
@@ -193,7 +193,7 @@ class Process:
         """
         Occurs when the root node has detected that the game has been solved
         """
-        self.IS_FINISHED = True
+        IS_FINISHED = True
 
     def lookup(self, job):
         """
@@ -252,10 +252,7 @@ class Process:
         Send the job back to the node who asked for the computation
         to be done.
         """
-        if type(job.game_state is str):
-            logging.info(str(rank) + " is sending back " + job.game_state)
-        else:
-            logging.info(str(rank) + " is sending back " + str(job.game_state.pos))
+        logging.info(str(rank) + " is sending back " + str(job.game_state) + " to " + str(job.parent))
         comm.send(job, dest=job.parent)
 
     def _res_red(self, res1, res2):
