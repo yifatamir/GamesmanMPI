@@ -8,7 +8,7 @@ from mpi4py import MPI
 import hashlib
 import sys
 import inspect
-from Queue import PriorityQueue
+from queue import PriorityQueue
 
 # Import game definition from file specified in command line
 game_module = __import__(sys.argv[1].replace('.py', ''))
@@ -206,7 +206,7 @@ class Process:
             res = self.resolved[job.game_state.pos]
             if DEBUG:
                 print(str(job.game_state.pos) + " has been resolved")
-            return Job(Job.SEND_BACK, res, job.parent, job.job_id)
+            return Job(Job.SEND_BACK, res, self.rank, job.job_id)
         except KeyError: # Not in dictionary.
             # Try to see if it is_primitive:
             if job.game_state.is_primitive():
