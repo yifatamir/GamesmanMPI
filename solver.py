@@ -2,13 +2,15 @@
 # SOLVER PORTION
 #################################################
 
-DEBUG = True
-
 from mpi4py import MPI
 import hashlib
 import sys
 import inspect
-from queue import PriorityQueue
+from Queue import PriorityQueue
+import logging
+
+# Set up our logging system
+logging.basicConfig(filename='solver_log.log', filemode='w', level=logging.DEBUG)
 
 # Import game definition from file specified in command line
 game_module = __import__(sys.argv[1].replace('.py', ''))
@@ -144,11 +146,10 @@ class Process:
                 """
                 Need to figure out where to put this...
                 if self.rank == Process.ROOT:
-                    if DEBUG:
-                        print("Finished")
-                    fin = Job(Job.FINISHED)
-                    for r in range(0, size):
-                        comm.isend(fin,  dest = r)
+                logging.info('Finished')
+                fin = Job(Job.FINISHED)
+                for r in range(0, size):
+                    comm.isend(fin,  dest = r)
                 """
                 self.add_job(Job(Job.CHECK_FOR_UPDATES))
             job = self.work.get()
@@ -200,18 +201,15 @@ class Process:
         resolved list. Returns the result if this is the case, None
         otherwise.
         """
-        if DEBUG:
-            print("Machine " + str(rank) + " looking up " + str(job.game_state.pos))
+        logging.info("Machine " + str(rank) + " looking up " + str(job.game_state.pos))
         try:
             res = self.resolved[job.game_state.pos]
-            if DEBUG:
-                print(str(job.game_state.pos) + " has been resolved")
+            logging.info(str(job.game_state.pos) + " has been resolved")
             return Job(Job.SEND_BACK, res, self.rank, job.job_id)
         except KeyError: # Not in dictionary.
             # Try to see if it is_primitive:
             if job.game_state.is_primitive():
-                if DEBUG:
-                    print(str(job.game_state.pos) + " is primitive")
+                logging.info(str(job.game_state.pos) + " is primitive")
                 self.resolved[job.game_state.pos] = job.game_state.state
                 return Job(Job.SEND_BACK, job.game_state.state, self.rank, job.job_id)
             self._distributed_id += 1
@@ -228,8 +226,7 @@ class Process:
         # some point.
         for child in children:
             job = Job(Job.LOOK_UP, child, self.rank, self._distributed_id)
-            if DEBUG:
-                print(str(rank) + " found child " + str(job.game_state.pos) + ", sending to " + str(child.get_hash()))
+            logging.info(str(rank) + " found child " + str(job.game_state.pos) + ", sending to " + str(child.get_hash()))
 
             self.sent.append(comm.isend(job,  dest = child.get_hash()))
 
@@ -255,11 +252,10 @@ class Process:
         Send the job back to the node who asked for the computation
         to be done.
         """
-        if DEBUG:
-            if type(job.game_state is str):
-                print(str(rank) + " is sending back " + job.game_state)
-            else:
-                print(str(rank) + " is sending back " + str(job.game_state.pos))
+        if type(job.game_state is str):
+            logging.info(str(rank) + " is sending back " + job.game_state)
+        else:
+            logging.info(str(rank) + " is sending back " + str(job.game_state.pos))
         comm.send(job, dest=job.parent)
 
     def _res_red(self, res1, res2):
