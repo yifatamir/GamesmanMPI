@@ -154,17 +154,6 @@ class Process:
         """
         # TODO
         while not Process.IS_FINISHED:
-<<<<<<< HEAD
-            time.sleep(1)
-            if self.work.qsize() == 0:
-                if self.rank == 0 and Process.INITIAL_POS in self.resolved:
-                    logging.info('Finished')
-                    fin = Job(Job.FINISHED)
-                    for r in range(size):
-                        comm.isend(fin, dest = r)
-                else:
-                    self.add_job(Job(Job.CHECK_FOR_UPDATES))
-=======
             logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
             logging.info("Machine " + str(self.rank) + " has resolved: " + str(self.resolved))
             if self.rank == 0 and Process.INITIAL_POS in self.resolved:
@@ -173,7 +162,6 @@ class Process:
                 comm.finalize(1)
             else:
                 self.add_job(Job(Job.CHECK_FOR_UPDATES))
->>>>>>> upstream/backtrack
             job = self.work.get()
             result = self.dispatch(job)
             if result is None: # Check for updates returns nothing.
@@ -236,7 +224,7 @@ class Process:
             return Job(Job.DISTRIBUTE, job.game_state, job.parent, job.job_id)
 
     def _add_pending_state(self, job, children):
-        # Refer to lines 179-187 for an explanation of why this 
+        # Refer to lines 179-187 for an explanation of why this
         # is done.
         self._pending[self._id] = [job]
         self._counter[self._id] = len(children)
@@ -260,9 +248,9 @@ class Process:
         # some point.
         for child in children:
             job = Job(Job.LOOK_UP, child, self.rank, self._id)
-            logging.info("Machine " + str(rank) 
+            logging.info("Machine " + str(rank)
                        + " found child " + str(job.game_state.pos)
-                       + ", sending to " + str(child.get_hash())) 
+                       + ", sending to " + str(child.get_hash()))
 
             comm.isend(job,  dest = child.get_hash())
 
@@ -313,7 +301,7 @@ class Process:
         determine whether this position in the game tree is a WIN,
         LOSS, TIE, or DRAW.
         """
-        self._counter[job.job_id] -= 1 
+        self._counter[job.job_id] -= 1
         self._pending[job.job_id].append(job.game_state) # [Job, GameState, ... ]
         if self._counter[job.job_id] == 0: # Resolve _pending.
             to_resolve = self._pending[job.job_id][0] # Job
