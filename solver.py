@@ -2,9 +2,11 @@ from mpi4py import MPI
 import hashlib
 import sys
 import inspect
-from queue import PriorityQueue
+from Queue import PriorityQueue
 import logging
 import time
+
+DEBUG = True
 
 # Set up our logging system
 logging.basicConfig(filename='solver_log.log', filemode='w', level=logging.DEBUG)
@@ -154,11 +156,13 @@ class Process:
         """
         # TODO
         while not Process.IS_FINISHED:
+            if DEBUG:
+                time.sleep(.2)
             logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
             logging.info("Machine " + str(self.rank) + " has resolved: " + str(self.resolved))
             if self.rank == 0 and Process.INITIAL_POS in self.resolved:
                 logging.info('Finished')
-                print self.resolved[Process.INITIAL_POS]
+                print (self.resolved[Process.INITIAL_POS])
                 comm.finalize(1)
             else:
                 self.add_job(Job(Job.CHECK_FOR_UPDATES))
@@ -227,7 +231,7 @@ class Process:
         # Refer to lines 179-187 for an explanation of why this
         # is done.
         self._pending[self._id] = [job]
-        self._counter[self._id] = len(children)
+        self._counter[self._id] = len(list(children))
 
     def _update_id(self):
         """
