@@ -6,8 +6,9 @@ from mpi4py import MPI
 import hashlib
 import sys
 import inspect
-from Queue import PriorityQueue
+from queue import PriorityQueue
 import logging
+import time
 
 # Set up our logging system
 logging.basicConfig(filename='solver_log.log', filemode='w', level=logging.DEBUG)
@@ -144,6 +145,7 @@ class Process:
         """
         # TODO
         while not Process.IS_FINISHED:
+            time.sleep(1)
             if self.work.qsize() == 0:
                 if self.rank == 0 and Process.INITIAL_POS in self.resolved:
                     logging.info('Finished')
