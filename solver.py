@@ -186,22 +186,11 @@ class Process:
         # with length 2. Then once all the results have been received
         # you can compare the length, and then reduce the results.
         # solving this particular distributed task.
+        self._id = 0              # Job id tracker.
         self._counter = {}        # A job_id -> Number of results
                                   # remaining.
-        self._id_to_resolved = {} # A job_id -> a gamestate that
-                                  # needs resolution.
-        self._id = 0              # The id of the job.
-        self._pending = {}        # game state -> list of 
-                                  # children game states.
-                                  # Needed to resolve a pending
-                                  # state.
-        self._gamestate_dep = {}  # When a node cannot be resolved 
-                                  # immediately back got parent,
-                                  # information about the parent is
-                                  # lost as a new parent is assigned
-                                  # This keeps track of the parents
-                                  # that need a particular game
-                                  # state.
+        self._pending = {}        # job_id -> [ Job, GameStates, ... ]
+                                  # Resolved.
         # Main process will terminate everyone by bcasting the value of
         # finished to True.
         self.finished = False
@@ -229,26 +218,21 @@ class Process:
         try:
             res = self.resolved[job.game_state.pos]
             logging.info("Positition " + str(job.game_state.pos) + " has been resolved")
-            return Job(Job.SEND_BACK, res, job.parent, job.job_id)
+            job.game_state.state = res
+            return Job(Job.SEND_BACK, job.game_state, job.parent, job.job_id)
         except KeyError: # Not in dictionary.
             # Try to see if it is_primitive:
             if job.game_state.is_primitive():
                 logging.info("Position " + str(job.game_state.pos) + " is primitive")
                 self.resolved[job.game_state.pos] = job.game_state.state
-                return Job(Job.SEND_BACK, job.game_state.state, job.parent, job.job_id)
-            return Job(Job.DISTRIBUTE, job.game_state, job.parent, self._id)
+                return Job(Job.SEND_BACK, job.game_state, job.parent, job.job_id)
+            return Job(Job.DISTRIBUTE, job.game_state, job.parent, job.job_id)
 
     def _add_pending_state(self, job, children):
         # Refer to lines 179-187 for an explanation of why this 
         # is done.
-        try:
-            self._gamestate_dep[job.game_state.pos].append((job.parent, job.job_id))
-        except KeyError:
-            self._gamestate_dep[job.game_state.pos] = []
-            self._gamestate_dep[job.game_state.pos].append((job.parent, job.job_id))
-        self._pending[job.game_state.pos] = []
+        self._pending[self._id] = [job]
         self._counter[self._id] = len(children)
-        self._id_to_resolved[self._id] = job.game_state.pos
 
     def _update_id(self):
         """
@@ -307,13 +291,13 @@ class Process:
         Private method that helps reduce in resolve.
         """
         # Probably can be done in a "cleaner" way.
-        if res1 == "LOSS" and res2 == "LOSS":
+        if res1.state == "LOSS" and res2.state == "LOSS":
             return "LOSS"
-        elif res1.pos == "WIN" or res2 == "WIN":
+        elif res1.state == "WIN" or res2.state == "WIN":
             return "WIN"
-        elif res1 == "TIE" or res2 == "TIE":
+        elif res1.state == "TIE" or res2.state == "TIE":
             return "TIE"
-        elif res1 == "DRAW" or res2 == "DRAW":
+        elif res1.state == "DRAW" or res2.state == "DRAW":
             return "DRAW"
 
     def resolve(self, job):
@@ -322,15 +306,16 @@ class Process:
         determine whether this position in the game tree is a WIN,
         LOSS, TIE, or DRAW.
         """
-        self._counter[job.job_id] -= 1
-        self._pending[self._id_to_resolved[job.job_id]].append(job.game_state)
-        if self._counter[job.job_id] == 0:
-            resolved_state = self._id_to_resolved[job.job_id]
-            self.resolved[resolved_state] = reduce(self._res_red, self._pending[resolved_state])
-            logging.info("Position " + str(resolved_state) + " has been resolved.")
-            for p_data in self._gamestate_dep[resolved_state]:
-                to = Job(Job.SEND_BACK, self.resolved[resolved_state], p_data[0], p_data[1])
-                self.add_job(to)
+        self._counter[job.job_id] -= 1 
+        self._pending[job.job_id].append(job.game_state) # [Job, GameState, ... ]
+        if self._counter[job.job_id] == 0: # Resolve _pending.
+            to_resolve = self._pending[job.job_id][0] # Job
+            resolve_data = self._pending[job.job_id][1:] # [GameState, GameState, ...]
+            self.resolved[to_resolve.game_state.pos] = reduce(self._res_red, resolve_data)
+            job.game_state.state = self.resolved[to_resolve.game_state.pos]
+            logging.info("Position " + str(job.game_state.pos) + " has been resolved.")
+            to = Job(Job.SEND_BACK, job.game_state, to_resolve.parent, to_resolve.job_id)
+            self.add_job(to)
 
 process = Process(rank)
 if process.rank == Process.ROOT:
