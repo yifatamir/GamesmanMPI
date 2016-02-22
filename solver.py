@@ -150,7 +150,7 @@ class Process:
         """
         # TODO
         while not Process.IS_FINISHED:
-            logging.info("Machine 0 has " + self._queue_to_str(self.work) + " lined up to work on")
+            logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
             if self.work.qsize() == 0:
                 if self.rank == 0 and Process.INITIAL_POS in self.resolved:
                     logging.info('Finished')
