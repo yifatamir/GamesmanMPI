@@ -1,7 +1,3 @@
-#################################################
-# SOLVER PORTION
-#################################################
-
 from mpi4py import MPI
 import hashlib
 import sys
@@ -83,12 +79,15 @@ class Job:
     CHECK_FOR_UPDATES = "check_for_updates"
     SEND_BACK         = "send_back"
     FINISHED          = "finished"
+    RESOLVE           = "resolve"
+
     _priority_table = {
             FINISHED          : 0,
             LOOK_UP           : 1,
-            SEND_BACK         : 2,
-            DISTRIBUTE        : 3,
-            CHECK_FOR_UPDATES : 4
+            RESOLVE           : 2,
+            SEND_BACK         : 3,
+            DISTRIBUTE        : 4,
+            CHECK_FOR_UPDATES : 5
     }
 
     # Keep a special variable for the initial job!
@@ -120,7 +119,7 @@ class Process:
     ROOT = 0
     IS_FINISHED = False
 
-    INITIAL_POS = game_module.initial_position
+    INITIAL_POS = GameState(game_module.initial_position)
 
     def dispatch(self, job):
         """
@@ -131,12 +130,19 @@ class Process:
         _dispatch_table = {
                 Job.FINISHED          : self.finished,
                 Job.LOOK_UP           : self.lookup,
+                Job.RESOLVE           : self.resolve,
                 Job.DISTRIBUTE        : self.distribute,
                 Job.SEND_BACK         : self.send_back,
                 Job.CHECK_FOR_UPDATES : self.check_for_updates
         }
         return _dispatch_table[job.job_type](job)
 
+    def _queue_to_str(self, q):
+        """
+        For debugging purposes.
+        Prints the job type for each job in the job queue.
+        """
+        return ', '.join([str(j.job_type) for j in q.queue])
 
     def run(self):
         """
@@ -144,12 +150,12 @@ class Process:
         """
         # TODO
         while not Process.IS_FINISHED:
+            logging.info("Machine 0 has " + self._queue_to_str(self.work) + " lined up to work on")
             if self.work.qsize() == 0:
                 if self.rank == 0 and Process.INITIAL_POS in self.resolved:
                     logging.info('Finished')
-                    fin = Job(Job.FINISHED)
-                    for r in range(size):
-                        comm.isend(fin, dest = r)
+                    for rnk in range(size):
+                        comm.isend(Job(Job.FINISHED), dest = rnk)
                 else:
                     self.add_job(Job(Job.CHECK_FOR_UPDATES))
             job = self.work.get()
@@ -162,12 +168,8 @@ class Process:
         self.rank = rank
         self.work = PriorityQueue()
         self.resolved = {}
-        # Keep a list of sent requests, and received requests,
-        # if sending fails, should be able to handle it some-
-        # how.
         # As for recieving, should test them when appropriate
         # in the run loop.
-        self.sent = []
         self.received = []
         # Keep a dictionary of "distributed tasks"
         # Should contain an id associated with the length of task.
@@ -176,8 +178,22 @@ class Process:
         # with length 2. Then once all the results have been received
         # you can compare the length, and then reduce the results.
         # solving this particular distributed task.
-        self._distributed = {}
-        self._distributed_id = 0
+        self._counter = {}        # A job_id -> Number of results
+                                  # remaining.
+        self._id_to_resolved = {} # A job_id -> a gamestate that
+                                  # needs resolution.
+        self._id = 0              # The id of the job.
+        self._pending = {}        # game state -> list of 
+                                  # children game states.
+                                  # Needed to resolve a pending
+                                  # state.
+        self._gamestate_dep = {}  # When a node cannot be resolved 
+                                  # immediately back got parent,
+                                  # information about the parent is
+                                  # lost as a new parent is assigned
+                                  # This keeps track of the parents
+                                  # that need a particular game
+                                  # state.
         # Main process will terminate everyone by bcasting the value of
         # finished to True.
         self.finished = False
@@ -204,16 +220,33 @@ class Process:
         logging.info("Machine " + str(rank) + " looking up " + str(job.game_state.pos))
         try:
             res = self.resolved[job.game_state.pos]
-            logging.info(str(job.game_state.pos) + " has been resolved")
-            return Job(Job.SEND_BACK, res, self.rank, job.job_id)
+            logging.info("Positition " + str(job.game_state.pos) + " has been resolved")
+            return Job(Job.SEND_BACK, res, job.parent, job.job_id)
         except KeyError: # Not in dictionary.
             # Try to see if it is_primitive:
             if job.game_state.is_primitive():
-                logging.info(str(job.game_state.pos) + " is primitive")
+                logging.info("Position " + str(job.game_state.pos) + " is primitive")
                 self.resolved[job.game_state.pos] = job.game_state.state
-                return Job(Job.SEND_BACK, job.game_state.state, self.rank, job.job_id)
-            self._distributed_id += 1
-            return Job(Job.DISTRIBUTE, job.game_state, self.rank, self._distributed_id)
+                return Job(Job.SEND_BACK, job.game_state.state, job.parent, job.job_id)
+            return Job(Job.DISTRIBUTE, job.game_state, job.parent, self._id)
+
+    def _add_pending_state(self, job, children):
+        # Refer to lines 179-187 for an explanation of why this 
+        # is done.
+        try:
+            self._gamestate_dep[job.game_state.pos].append((job.parent, job.job_id))
+        except KeyError:
+            self._gamestate_dep[job.game_state.pos] = []
+            self._gamestate_dep[job.game_state.pos].append((job.parent, job.job_id))
+        self._pending[job.game_state.pos] = []
+        self._counter[self._id] = len(children)
+        self._id_to_resolved[self._id] = job.game_state.pos
+
+    def _update_id(self):
+        """
+        Changes the id so there is no collision.
+        """
+        self._id += 1
 
     def distribute(self, job):
         """
@@ -221,14 +254,20 @@ class Process:
         children.
         """
         children = job.game_state.expand()
+        # Add new pending state information.
+        self._add_pending_state(job, children)
         # Keep a list of the requests made by isend. Something may
         # fail, so we will need to worry about error checking at
         # some point.
         for child in children:
-            job = Job(Job.LOOK_UP, child, self.rank, self._distributed_id)
-            logging.info(str(rank) + " found child " + str(job.game_state.pos) + ", sending to " + str(child.get_hash()))
+            job = Job(Job.LOOK_UP, child, self.rank, self._id)
+            logging.info("Machine " + str(rank) 
+                       + " found child " + str(job.game_state.pos)
+                       + ", sending to " + str(child.get_hash())) 
 
-            self.sent.append(comm.isend(job,  dest = child.get_hash()))
+            comm.isend(job,  dest = child.get_hash())
+
+        self._update_id()
 
     def check_for_updates(self, job):
         """
@@ -238,7 +277,6 @@ class Process:
         Returns None if there is nothing to be recieved.
         """
         # Probe for any sources
-
         if comm.iprobe(source=MPI.ANY_SOURCE):
             # If there are sources recieve them.
             self.received.append(comm.recv(source=MPI.ANY_SOURCE))
@@ -252,32 +290,39 @@ class Process:
         Send the job back to the node who asked for the computation
         to be done.
         """
-        logging.info(str(rank) + " is sending back " + str(job.game_state) + " to " + str(job.parent))
-        comm.send(job, dest=job.parent)
+        logging.info("Machine " + str(rank) + " is sending back " + str(job.game_state) + " to " + str(job.parent))
+        resolve_job = Job(Job.RESOLVE, job.game_state, job.parent, job.job_id)
+        comm.send(resolve_job, dest=resolve_job.parent)
 
     def _res_red(self, res1, res2):
         """
-        Private method that helps reduce in reduce_results.
+        Private method that helps reduce in resolve.
         """
         # Probably can be done in a "cleaner" way.
         if res1 == "LOSS" and res2 == "LOSS":
             return "LOSS"
-        elif res1 == "WIN" or res2 == "WIN":
+        elif res1.pos == "WIN" or res2 == "WIN":
             return "WIN"
         elif res1 == "TIE" or res2 == "TIE":
             return "TIE"
         elif res1 == "DRAW" or res2 == "DRAW":
             return "DRAW"
 
-    def reduce_results(self, results):
+    def resolve(self, job):
         """
         Given a list of WIN, LOSS, TIE, (DRAW, well maybe for later)
         determine whether this position in the game tree is a WIN,
         LOSS, TIE, or DRAW.
         """
-        # TODO for TIE, DRAW
-        return reduce(results, _res_red)
-
+        self._counter[job.job_id] -= 1
+        self._pending[self._id_to_resolved[job.job_id]].append(job.game_state)
+        if self._counter[job.job_id] == 0:
+            resolved_state = self._id_to_resolved[job.job_id]
+            self.resolved[resolved_state] = reduce(self._res_red, self._pending[resolved_state])
+            logging.info("Position " + str(resolved_state) + " has been resolved.")
+            for p_data in self._gamestate_dep[resolved_state]:
+                to = Job(Job.SEND_BACK, self.resolved[resolved_state], p_data[0], p_data[1])
+                self.add_job(to)
 
 process = Process(rank)
 if process.rank == Process.ROOT:
