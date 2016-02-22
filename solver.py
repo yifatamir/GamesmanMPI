@@ -98,11 +98,6 @@ class Job:
             CHECK_FOR_UPDATES : 5
     }
 
-    # Keep a special variable for the initial job!
-    # This way you can check if the job you finished was
-    # the initial job. In this case we are done!
-    INITIAL_JOB_ID = -1
-
     def _assign_priority(self):
         self.priority = self._priority_table[self.job_type]
 
@@ -160,13 +155,12 @@ class Process:
         while not Process.IS_FINISHED:
             logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
             logging.info("Machine " + str(self.rank) + " has resolved: " + str(self.resolved))
-            if self.work.qsize() == 0:
-                if self.rank == 0 and Process.INITIAL_POS in self.resolved:
-                    logging.info('Finished')
-                    for rnk in range(size):
-                        comm.isend(Job(Job.FINISHED), dest = rnk)
-                else:
-                    self.add_job(Job(Job.CHECK_FOR_UPDATES))
+            if self.rank == 0 and Process.INITIAL_POS in self.resolved:
+                logging.info('Finished')
+                print self.resolved[Process.INITIAL_POS]
+                comm.finalize(1)
+            else:
+                self.add_job(Job(Job.CHECK_FOR_UPDATES))
             job = self.work.get()
             result = self.dispatch(job)
             if result is None: # Check for updates returns nothing.
@@ -225,7 +219,6 @@ class Process:
             # Try to see if it is_primitive:
             if job.game_state.is_primitive():
                 logging.info("Position " + str(job.game_state.pos) + " is primitive")
-                self.resolved[job.game_state.pos] = job.game_state.state
                 return Job(Job.SEND_BACK, job.game_state, job.parent, job.job_id)
             return Job(Job.DISTRIBUTE, job.game_state, job.parent, job.job_id)
 
@@ -321,7 +314,7 @@ class Process:
 process = Process(rank)
 if process.rank == Process.ROOT:
     initial_gamestate = GameState(game_module.initial_position)
-    initial_job = Job(Job.LOOK_UP, initial_gamestate, process.rank, Job.INITIAL_JOB_ID)
+    initial_job = Job(Job.LOOK_UP, initial_gamestate, process.rank, 0) # Defaults at zero, TODO: Fix abstraction violation.
     process.add_job(initial_job)
 
 process.run()
