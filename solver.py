@@ -32,6 +32,7 @@ class GameState:
     """
     def __init__(self, pos):
         self.pos = pos
+        self._state = None
 
     def get_hash(self):
         """
@@ -57,7 +58,14 @@ class GameState:
         Determines whether the state is a:
         WIN, LOSS, TIE, DRAW or UNDECIDED
         """
-        return game_module.primitive(self.pos)
+        if self._state == None:
+            return game_module.primitive(self.pos)
+        else:
+            return self._state
+
+    @state.setter
+    def state(self, new_state):
+        self._state = new_state
 
     def is_primitive(self):
         """
