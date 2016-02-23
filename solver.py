@@ -157,9 +157,10 @@ class Process:
         # TODO
         while not Process.IS_FINISHED:
             if DEBUG:
-                time.sleep(.2)
-            logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
-            logging.info("Machine " + str(self.rank) + " has resolved: " + str(self.resolved))
+                time.sleep(.005)
+            if not(self._queue_to_str(self.work) == '' or self._queue_to_str(self.work) == 'check_for_updates, check_for_updates'):
+                logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
+                logging.info("Machine " + str(self.rank) + " has resolved: " + str(self.resolved))
             if self.rank == 0 and Process.INITIAL_POS in self.resolved:
                 logging.info('Finished')
                 print (self.resolved[Process.INITIAL_POS])
@@ -217,7 +218,7 @@ class Process:
         logging.info("Machine " + str(rank) + " looking up " + str(job.game_state.pos))
         try:
             res = self.resolved[job.game_state.pos]
-            logging.info("Positition " + str(job.game_state.pos) + " has been resolved")
+            logging.info("Position " + str(job.game_state.pos) + " has been resolved")
             job.game_state.state = res
             return Job(Job.SEND_BACK, job.game_state, job.parent, job.job_id)
         except KeyError: # Not in dictionary.
@@ -244,9 +245,11 @@ class Process:
         Given a gamestate distributes the results to the appropriate
         children.
         """
-        children = job.game_state.expand()
+        children = list(job.game_state.expand())
         # Add new pending state information.
+        #logging.info('Found children ' + ', '.join([str(c.pos) for c in children]))
         self._add_pending_state(job, children)
+        #logging.info('Found children ' + ', '.join([str(c.pos) for c in children]))
         # Keep a list of the requests made by isend. Something may
         # fail, so we will need to worry about error checking at
         # some point.
@@ -281,7 +284,7 @@ class Process:
         Send the job back to the node who asked for the computation
         to be done.
         """
-        logging.info("Machine " + str(rank) + " is sending back " + str(job.game_state) + " to " + str(job.parent))
+        logging.info("Machine " + str(rank) + " is sending back " + str(job.game_state.pos) + " to " + str(job.parent))
         resolve_job = Job(Job.RESOLVE, job.game_state, job.parent, job.job_id)
         comm.send(resolve_job, dest=resolve_job.parent)
 
