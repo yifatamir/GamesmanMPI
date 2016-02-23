@@ -6,8 +6,6 @@ from Queue import PriorityQueue
 import logging
 import time
 
-__debug__ = True
-
 # Set up our logging system
 logging.basicConfig(filename='solver_log.log', filemode='w', level=logging.DEBUG)
 
