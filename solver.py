@@ -155,7 +155,7 @@ class Process:
         # TODO
         while not Process.IS_FINISHED:
             if __debug__:
-                time.sleep(.005)
+                time.sleep(.05)
             if not(self._queue_to_str(self.work) == '' or self._queue_to_str(self.work) == 'check_for_updates, check_for_updates'):
                 logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
                 logging.info("Machine " + str(self.rank) + " has resolved: " + str(self.resolved))
@@ -163,7 +163,7 @@ class Process:
                 logging.info('Finished')
                 print (self.resolved[Process.INITIAL_POS])
                 comm.finalize(1)
-            else:
+            if self.work.empty():
                 self.add_job(Job(Job.CHECK_FOR_UPDATES))
             job = self.work.get()
             result = self.dispatch(job)
@@ -223,6 +223,7 @@ class Process:
             # Try to see if it is_primitive:
             if job.game_state.is_primitive():
                 logging.info("Position " + str(job.game_state.pos) + " is primitive")
+                self.resolved[job.game_state.pos] = game_module.primitive(job.game_state.pos)
                 return Job(Job.SEND_BACK, job.game_state, job.parent, job.job_id)
             return Job(Job.DISTRIBUTE, job.game_state, job.parent, job.job_id)
 
