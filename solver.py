@@ -6,8 +6,6 @@ from Queue import PriorityQueue
 import logging
 import time
 
-DEBUG = True
-
 # Set up our logging system
 logging.basicConfig(filename='solver_log.log', filemode='w', level=logging.DEBUG)
 
@@ -156,7 +154,7 @@ class Process:
         """
         # TODO
         while not Process.IS_FINISHED:
-            if DEBUG:
+            if __debug__:
                 time.sleep(.005)
             if not(self._queue_to_str(self.work) == '' or self._queue_to_str(self.work) == 'check_for_updates, check_for_updates'):
                 logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
