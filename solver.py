@@ -6,8 +6,10 @@ from Queue import PriorityQueue
 import logging
 import time
 
+__debug__ = True
+
 # Set up our logging system
-logging.basicConfig(filename='solver_log.log', filemode='w', level=logging.DEBUG)
+logging.basicConfig(filename='solver_log.log', filemode='w', level=logging.__debug__)
 
 # Import game definition from file specified in command line
 game_module = __import__(sys.argv[1].replace('.py', ''))
@@ -154,8 +156,8 @@ class Process:
         """
         # TODO
         while not Process.IS_FINISHED:
-            if __debug__:
-                time.sleep(.005)
+            if DEBUG:
+                time.sleep(.05)
             if not(self._queue_to_str(self.work) == '' or self._queue_to_str(self.work) == 'check_for_updates, check_for_updates'):
                 logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
                 logging.info("Machine " + str(self.rank) + " has resolved: " + str(self.resolved))
@@ -163,7 +165,7 @@ class Process:
                 logging.info('Finished')
                 print (self.resolved[Process.INITIAL_POS])
                 comm.finalize(1)
-            else:
+            if self.work.empty():
                 self.add_job(Job(Job.CHECK_FOR_UPDATES))
             job = self.work.get()
             result = self.dispatch(job)
