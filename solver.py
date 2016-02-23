@@ -9,7 +9,7 @@ import time
 __debug__ = True
 
 # Set up our logging system
-logging.basicConfig(filename='solver_log.log', filemode='w', level=logging.__debug__)
+logging.basicConfig(filename='solver_log.log', filemode='w', level=logging.DEBUG)
 
 # Import game definition from file specified in command line
 game_module = __import__(sys.argv[1].replace('.py', ''))
@@ -156,7 +156,7 @@ class Process:
         """
         # TODO
         while not Process.IS_FINISHED:
-            if DEBUG:
+            if __debug__:
                 time.sleep(.05)
             if not(self._queue_to_str(self.work) == '' or self._queue_to_str(self.work) == 'check_for_updates, check_for_updates'):
                 logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
