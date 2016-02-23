@@ -4,6 +4,9 @@ import sys
 import inspect
 from Queue import PriorityQueue
 import logging
+import time
+
+DEBUG = True
 
 # Set up our logging system
 logging.basicConfig(filename='solver_log.log', filemode='w', level=logging.DEBUG)
@@ -153,11 +156,14 @@ class Process:
         """
         # TODO
         while not Process.IS_FINISHED:
-            logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
-            logging.info("Machine " + str(self.rank) + " has resolved: " + str(self.resolved))
+            if DEBUG:
+                time.sleep(.005)
+            if not(self._queue_to_str(self.work) == '' or self._queue_to_str(self.work) == 'check_for_updates, check_for_updates'):
+                logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
+                logging.info("Machine " + str(self.rank) + " has resolved: " + str(self.resolved))
             if self.rank == 0 and Process.INITIAL_POS in self.resolved:
                 logging.info('Finished')
-                print self.resolved[Process.INITIAL_POS]
+                print (self.resolved[Process.INITIAL_POS])
                 comm.finalize(1)
             else:
                 self.add_job(Job(Job.CHECK_FOR_UPDATES))
@@ -212,7 +218,7 @@ class Process:
         logging.info("Machine " + str(rank) + " looking up " + str(job.game_state.pos))
         try:
             res = self.resolved[job.game_state.pos]
-            logging.info("Positition " + str(job.game_state.pos) + " has been resolved")
+            logging.info("Position " + str(job.game_state.pos) + " has been resolved")
             job.game_state.state = res
             return Job(Job.SEND_BACK, job.game_state, job.parent, job.job_id)
         except KeyError: # Not in dictionary.
@@ -223,10 +229,10 @@ class Process:
             return Job(Job.DISTRIBUTE, job.game_state, job.parent, job.job_id)
 
     def _add_pending_state(self, job, children):
-        # Refer to lines 179-187 for an explanation of why this 
+        # Refer to lines 179-187 for an explanation of why this
         # is done.
         self._pending[self._id] = [job]
-        self._counter[self._id] = len(children)
+        self._counter[self._id] = len(list(children))
 
     def _update_id(self):
         """
@@ -239,17 +245,19 @@ class Process:
         Given a gamestate distributes the results to the appropriate
         children.
         """
-        children = job.game_state.expand()
+        children = list(job.game_state.expand())
         # Add new pending state information.
+        #logging.info('Found children ' + ', '.join([str(c.pos) for c in children]))
         self._add_pending_state(job, children)
+        #logging.info('Found children ' + ', '.join([str(c.pos) for c in children]))
         # Keep a list of the requests made by isend. Something may
         # fail, so we will need to worry about error checking at
         # some point.
         for child in children:
             job = Job(Job.LOOK_UP, child, self.rank, self._id)
-            logging.info("Machine " + str(rank) 
+            logging.info("Machine " + str(rank)
                        + " found child " + str(job.game_state.pos)
-                       + ", sending to " + str(child.get_hash())) 
+                       + ", sending to " + str(child.get_hash()))
 
             comm.isend(job,  dest = child.get_hash())
 
@@ -276,7 +284,7 @@ class Process:
         Send the job back to the node who asked for the computation
         to be done.
         """
-        logging.info("Machine " + str(rank) + " is sending back " + str(job.game_state) + " to " + str(job.parent))
+        logging.info("Machine " + str(rank) + " is sending back " + str(job.game_state.pos) + " to " + str(job.parent))
         resolve_job = Job(Job.RESOLVE, job.game_state, job.parent, job.job_id)
         comm.send(resolve_job, dest=resolve_job.parent)
 
@@ -300,7 +308,7 @@ class Process:
         determine whether this position in the game tree is a WIN,
         LOSS, TIE, or DRAW.
         """
-        self._counter[job.job_id] -= 1 
+        self._counter[job.job_id] -= 1
         self._pending[job.job_id].append(job.game_state) # [Job, GameState, ... ]
         if self._counter[job.job_id] == 0: # Resolve _pending.
             to_resolve = self._pending[job.job_id][0] # Job
