@@ -120,10 +120,10 @@ class Process:
     """
     Class that defines the behavior what each process should do
     """
-    ROOT = 0
     IS_FINISHED = False
 
     INITIAL_POS = GameState(game_module.initial_position)
+    ROOT = INITIAL_POS.get_hash()
 
     def dispatch(self, job):
         """
@@ -148,6 +148,13 @@ class Process:
         """
         return ', '.join([str(j.job_type) for j in q.queue])
 
+    def _log_work(self, work):
+        check_for_updates = 'check_for_updates, check_for_updates'
+        if not(self._queue_to_str(work) == '' or self._queue_to_str(work) == check_for_updates):
+            logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
+            logging.info("Machine " + str(self.rank) + " has resolved: " + str(self.resolved))
+
+
     def run(self):
         """
         Main loop for each process
@@ -156,10 +163,8 @@ class Process:
         while not Process.IS_FINISHED:
             if __debug__:
                 time.sleep(.05)
-            if not(self._queue_to_str(self.work) == '' or self._queue_to_str(self.work) == 'check_for_updates, check_for_updates'):
-                logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
-                logging.info("Machine " + str(self.rank) + " has resolved: " + str(self.resolved))
-            if self.rank == 0 and Process.INITIAL_POS in self.resolved:
+                self._log_work(self.work)
+            if self.rank == Process.ROOT and Process.INITIAL_POS in self.resolved:
                 logging.info('Finished')
                 print (self.resolved[Process.INITIAL_POS])
                 comm.finalize(1)
