@@ -5,7 +5,6 @@ import inspect
 from Queue import PriorityQueue
 import logging
 import time
-# from enum import Enum
 
 # Set up our logging system
 logging.basicConfig(filename='solver_log.log', filemode='w', level=logging.DEBUG)
@@ -120,20 +119,14 @@ class Job:
         """
         return self.priority < other.priority
 
-    def __str__(self):
-        if not isinstance(self.game_state, GameState):
-            return self.job_type
-        else:
-            return self.job_type + " " + str(self.game_state.pos)
-
 class Process:
     """
     Class that defines the behavior what each process should do
     """
+    ROOT = 0
     IS_FINISHED = False
 
     INITIAL_POS = GameState(game_module.initial_position)
-    ROOT = INITIAL_POS.get_hash()
 
     def dispatch(self, job):
         """
@@ -156,18 +149,7 @@ class Process:
         For debugging purposes.
         Prints the job type for each job in the job queue.
         """
-        return ', '.join([str(j) for j in q.queue])
-
-    def _log_work(self, work):
-        """
-        For debugging purposes.
-        Prints out some useful information about work.
-        """
-        check_for_updates = 'check_for_updates, check_for_updates'
-        if not(self._queue_to_str(work) == '' or self._queue_to_str(work) == check_for_updates):
-            logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
-            logging.info("Machine " + str(self.rank) + " has resolved: " + str(self.resolved))
-
+        return ', '.join([str(j.job_type) for j in q.queue])
 
     def run(self):
         """
@@ -177,10 +159,12 @@ class Process:
         while not Process.IS_FINISHED:
             if __debug__:
                 time.sleep(.05)
-                self._log_work(self.work)
-            if self.rank == Process.ROOT and Process.INITIAL_POS in self.resolved:
+            if not(self._queue_to_str(self.work) == '' or self._queue_to_str(self.work) == 'check_for_updates, check_for_updates'):
+                logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
+                logging.info("Machine " + str(self.rank) + " has resolved: " + str(self.resolved))
+            if self.rank == 0 and Process.INITIAL_POS.pos in self.resolved:
                 logging.info('Finished')
-                print self.resolved[Process.INITIAL_POS]
+                print (self.resolved[Process.INITIAL_POS])
                 comm.finalize(1)
             if self.work.empty():
                 self.add_job(Job(Job.CHECK_FOR_UPDATES))
