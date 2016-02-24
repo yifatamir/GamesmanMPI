@@ -5,6 +5,7 @@ import inspect
 from Queue import PriorityQueue
 import logging
 import time
+# from enum import Enum
 
 # Set up our logging system
 logging.basicConfig(filename='solver_log.log', filemode='w', level=logging.DEBUG)
@@ -24,6 +25,9 @@ assert(inspect.isfunction(game_module.primitive))
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
+
+WIN, LOSS, TIE, DRAW = "WIN", "LOSS", "TIE", "DRAW"
+PRIMITIVES = (WIN, LOSS, TIE, DRAW)
 
 class GameState:
     """
@@ -75,7 +79,7 @@ class GameState:
         """
         # TODO: Don't violate abstraction barrier...
         # Notably: ("WIN", "LOSS", "TIE", "DRAW")
-        return self.state in ("WIN", "LOSS", "TIE", "DRAW")
+        return self.state in PRIMITIVES
 
 class Job:
     """
@@ -307,14 +311,14 @@ class Process:
         Private method that helps reduce in resolve.
         """
         # Probably can be done in a "cleaner" way.
-        if res1.state == "LOSS" and res2.state == "LOSS":
-            return "LOSS"
-        elif res1.state == "WIN" or res2.state == "WIN":
-            return "WIN"
-        elif res1.state == "TIE" or res2.state == "TIE":
-            return "TIE"
-        elif res1.state == "DRAW" or res2.state == "DRAW":
-            return "DRAW"
+        if res1.state == LOSS and res2.state == LOSS:
+            return LOSS
+        elif res1.state == WIN or res2.state == WIN:
+            return WIN
+        elif res1.state == TIE or res2.state == TIE:
+            return TIE
+        elif res1.state == DRAW or res2.state == DRAW:
+            return DRAW
 
     def resolve(self, job):
         """
