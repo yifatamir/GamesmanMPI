@@ -2,7 +2,7 @@ from mpi4py import MPI
 import hashlib
 import sys
 import inspect
-from Queue import PriorityQueue
+from queue import PriorityQueue
 import logging
 import time
 # from enum import Enum
@@ -176,11 +176,11 @@ class Process:
         # TODO
         while not Process.IS_FINISHED:
             if __debug__:
-                time.sleep(.05)
+                time.sleep(.1)
                 self._log_work(self.work)
             if self.rank == Process.ROOT and Process.INITIAL_POS in self.resolved:
                 logging.info('Finished')
-                print self.resolved[Process.INITIAL_POS]
+                print(self.resolved[Process.INITIAL_POS])
                 comm.finalize(1)
             if self.work.empty():
                 self.add_job(Job(Job.CHECK_FOR_UPDATES))
