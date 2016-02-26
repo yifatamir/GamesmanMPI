@@ -168,7 +168,7 @@ class Process:
             if __debug__:
                 time.sleep(.05)
                 self._log_work(self.work)
-            if self.rank == Process.ROOT and Process.INITIAL_POS in self.resolved:
+            if self.rank == Process.ROOT and Process.INITIAL_POS.pos in self.resolved:
                 logging.info('Finished')
                 print (self.resolved[Process.INITIAL_POS])
                 comm.finalize(1)
