@@ -7,9 +7,6 @@ import logging
 import time
 # from enum import Enum
 
-# Set up our logging system
-logging.basicConfig(filename='solver_log.log', filemode='w', level=logging.DEBUG)
-
 # Import game definition from file specified in command line
 game_module = __import__(sys.argv[1].replace('.py', ''))
 
@@ -25,6 +22,10 @@ assert(inspect.isfunction(game_module.primitive))
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
+
+# Set up our logging system
+logging.basicConfig(filename='logs/solver_log' + str(rank) + '.log', filemode='w', level=logging.DEBUG)
+
 
 WIN, LOSS, TIE, DRAW = "WIN", "LOSS", "TIE", "DRAW"
 PRIMITIVES = (WIN, LOSS, TIE, DRAW)
