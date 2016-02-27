@@ -28,6 +28,7 @@ logging.basicConfig(filename='logs/solver_log' + str(rank) + '.log', filemode='w
 
 
 WIN, LOSS, TIE, DRAW = "WIN", "LOSS", "TIE", "DRAW"
+UNKNOWN_REMOTENESS = -1
 PRIMITIVES = (WIN, LOSS, TIE, DRAW)
 
 class GameState:
@@ -39,6 +40,7 @@ class GameState:
     def __init__(self, pos):
         self.pos = pos
         self._state = None
+        self._remoteness = None
 
     def get_hash(self):
         """
@@ -57,6 +59,22 @@ class GameState:
         # Wrapped, in other words, a GameState object.
         wrapped_states = map(lambda m: GameState(m), raw_states)
         return wrapped_states
+
+    @property
+    def remoteness(self):
+        """
+        Determines returns remoteness if it
+        has been found, returns UNKNOWN_REMOTENESS
+        otherwise
+        """
+        if self._remoteness == None:
+            return UNKNOWN_REMOTENESS
+        else:
+            return self._remoteness
+
+    @remoteness.setter
+    def remoteness(self, new_remoteness):
+        self._remoteness = new_remoteness
 
     @property
     def state(self):
@@ -172,7 +190,7 @@ class Process:
             if self.rank == Process.ROOT and Process.INITIAL_POS.pos in self.resolved:
                 Process.IS_FINISHED = True
                 logging.info('Finished')
-                print (self.resolved[Process.INITIAL_POS.pos]) 
+                print (self.resolved[Process.INITIAL_POS.pos])
                 comm.Abort()
             if self.work.empty():
                 self.add_job(Job(Job.CHECK_FOR_UPDATES))
@@ -186,6 +204,7 @@ class Process:
         self.rank = rank
         self.work = PriorityQueue()
         self.resolved = {}
+        self.remote = {}
         # As for recieving, should test them when appropriate
         # in the run loop.
         self.received = []
@@ -234,6 +253,8 @@ class Process:
             # Try to see if it is_primitive:
             if job.game_state.is_primitive():
                 logging.info("Position " + str(job.game_state.pos) + " is primitive")
+                self.remote[job.game_state.pos] = 0
+                job.game_state.remoteness = 0
                 self.resolved[job.game_state.pos] = game_module.primitive(job.game_state.pos)
                 return Job(Job.SEND_BACK, job.game_state, job.parent, job.job_id)
             return Job(Job.DISTRIBUTE, job.game_state, job.parent, job.job_id)
@@ -312,6 +333,20 @@ class Process:
         elif res1.state == DRAW or res2.state == DRAW:
             return DRAW
 
+    def _remoteness_reduce(self, rem1, rem2):
+        """
+        Private method that helps reduce remoteness
+        """
+        if rem1.state == WIN and rem2.state == WIN:
+            return max(rem1.remoteness, rem2.remoteness) + 1
+        elif rem2.state == WIN:
+            return rem1.remoteness + 1
+        elif rem1.state == WIN:
+            return rem2.remoteness + 1
+        else:
+            return min(rem1.remoteness, rem2.remoteness) + 1
+
+
     def resolve(self, job):
         """
         Given a list of WIN, LOSS, TIE, (DRAW, well maybe for later)
@@ -324,7 +359,9 @@ class Process:
             to_resolve = self._pending[job.job_id][0] # Job
             resolve_data = self._pending[job.job_id][1:] # [GameState, GameState, ...]
             self.resolved[to_resolve.game_state.pos] = reduce(self._res_red, resolve_data)
+            self.remote[to_resolve.game_state.pos] = reduce(self._remoteness_reduce, resolve_data)
             job.game_state.state = self.resolved[to_resolve.game_state.pos]
+            job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
             logging.info("Position " + str(job.game_state.pos) + " has been resolved.")
             to = Job(Job.SEND_BACK, job.game_state, to_resolve.parent, to_resolve.job_id)
             self.add_job(to)
