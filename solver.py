@@ -325,9 +325,9 @@ class Process:
         """
         # Probably can be done in a "cleaner" way.
         if res1.state == LOSS and res2.state == LOSS:
-            return LOSS
-        elif res1.state == WIN or res2.state == WIN:
             return WIN
+        elif res1.state == WIN or res2.state == WIN:
+            return LOSS
         elif res1.state == TIE or res2.state == TIE:
             return TIE
         elif res1.state == DRAW or res2.state == DRAW:
