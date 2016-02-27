@@ -169,10 +169,10 @@ class Process:
                 time.sleep(.05)
                 self._log_work(self.work)
             if self.rank == Process.ROOT and Process.INITIAL_POS.pos in self.resolved:
+                Process.IS_FINISHED = True
                 logging.info('Finished')
-                print (self.resolved[Process.INITIAL_POS.pos])
-                return
-                # MPI.Finalize()
+                print (self.resolved[Process.INITIAL_POS.pos]) 
+                comm.Abort()
             if self.work.empty():
                 self.add_job(Job(Job.CHECK_FOR_UPDATES))
             job = self.work.get()
@@ -335,5 +335,3 @@ if process.rank == Process.ROOT:
     process.add_job(initial_job)
 
 process.run()
-
-comm.Barrier()
