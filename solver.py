@@ -7,9 +7,6 @@ import logging
 import time
 # from enum import Enum
 
-# Set up our logging system
-logging.basicConfig(filename='solver_log.log', filemode='w', level=logging.DEBUG)
-
 # Import game definition from file specified in command line
 game_module = __import__(sys.argv[1].replace('.py', ''))
 
@@ -25,6 +22,10 @@ assert(inspect.isfunction(game_module.primitive))
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
+
+# Set up our logging system
+logging.basicConfig(filename='logs/solver_log' + str(rank) + '.log', filemode='w', level=logging.DEBUG)
+
 
 WIN, LOSS, TIE, DRAW = "WIN", "LOSS", "TIE", "DRAW"
 PRIMITIVES = (WIN, LOSS, TIE, DRAW)
@@ -169,9 +170,10 @@ class Process:
                 time.sleep(.05)
                 self._log_work(self.work)
             if self.rank == Process.ROOT and Process.INITIAL_POS.pos in self.resolved:
+                Process.IS_FINISHED = True
                 logging.info('Finished')
-                print (self.resolved[Process.INITIAL_POS])
-                comm.finalize(1)
+                print (self.resolved[Process.INITIAL_POS.pos]) 
+                comm.Abort()
             if self.work.empty():
                 self.add_job(Job(Job.CHECK_FOR_UPDATES))
             job = self.work.get()
@@ -334,5 +336,3 @@ if process.rank == Process.ROOT:
     process.add_job(initial_job)
 
 process.run()
-
-comm.Barrier()
