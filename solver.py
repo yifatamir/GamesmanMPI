@@ -2,9 +2,10 @@ from mpi4py import MPI
 import hashlib
 import sys
 import inspect
-from Queue import PriorityQueue
+from queue import PriorityQueue
 import logging
 import time
+import functools
 # from enum import Enum
 
 # Import game definition from file specified in command line
@@ -175,7 +176,7 @@ class Process:
         check_for_updates = 'check_for_updates, check_for_updates'
         if not(self._queue_to_str(work) == '' or self._queue_to_str(work) == check_for_updates):
             logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
-            logging.info("Machine " + str(self.rank) + " has resolved: " + str(self.resolved))
+            logging.info("Machine " + str(self.rank) + " has resolved: " + str(self.resolved) + " " + str(self.remote))
 
 
     def run(self):
@@ -325,9 +326,9 @@ class Process:
         """
         # Probably can be done in a "cleaner" way.
         if res1.state == LOSS and res2.state == LOSS:
-            return LOSS
-        elif res1.state == WIN or res2.state == WIN:
             return WIN
+        elif res1.state == WIN or res2.state == WIN:
+            return LOSS
         elif res1.state == TIE or res2.state == TIE:
             return TIE
         elif res1.state == DRAW or res2.state == DRAW:
@@ -358,11 +359,11 @@ class Process:
         if self._counter[job.job_id] == 0: # Resolve _pending.
             to_resolve = self._pending[job.job_id][0] # Job
             resolve_data = self._pending[job.job_id][1:] # [GameState, GameState, ...]
-            self.resolved[to_resolve.game_state.pos] = reduce(self._res_red, resolve_data)
-            self.remote[to_resolve.game_state.pos] = reduce(self._remoteness_reduce, resolve_data)
+            self.resolved[to_resolve.game_state.pos] = functools.reduce(self._res_red, resolve_data)
+            self.remote[to_resolve.game_state.pos] = functools.reduce(self._remoteness_reduce, resolve_data)
             job.game_state.state = self.resolved[to_resolve.game_state.pos]
             job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
-            logging.info("Position " + str(job.game_state.pos) + " has been resolved.")
+            logging.info("Position " + str(job.game_state.pos) + " has been resolved, remoteness: " + str(self.remote[to_resolve.game_state.pos]))
             to = Job(Job.SEND_BACK, job.game_state, to_resolve.parent, to_resolve.job_id)
             self.add_job(to)
 
