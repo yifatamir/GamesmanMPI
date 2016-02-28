@@ -2,10 +2,9 @@ from mpi4py import MPI
 import hashlib
 import sys
 import inspect
-from queue import PriorityQueue
+from Queue import PriorityQueue
 import logging
 import time
-import functools
 # from enum import Enum
 
 # Import game definition from file specified in command line
@@ -347,6 +346,20 @@ class Process:
         else:
             return min(rem1.remoteness, rem2.remoteness) + 1
 
+    def reduce(self, function, iterable, initializer=None):
+        """
+        Equivilant to Python 2's reduce() or Python 3's
+        functools.reduce()
+        """
+        it = iter(iterable)
+        if initializer is None:
+            value = next(it)
+        else:
+            value = initializer
+        for element in it:
+            value = function(value, element)
+        return value
+
 
     def resolve(self, job):
         """
@@ -359,8 +372,8 @@ class Process:
         if self._counter[job.job_id] == 0: # Resolve _pending.
             to_resolve = self._pending[job.job_id][0] # Job
             resolve_data = self._pending[job.job_id][1:] # [GameState, GameState, ...]
-            self.resolved[to_resolve.game_state.pos] = functools.reduce(self._res_red, resolve_data)
-            self.remote[to_resolve.game_state.pos] = functools.reduce(self._remoteness_reduce, resolve_data)
+            self.resolved[to_resolve.game_state.pos] = self.reduce(self._res_red, resolve_data)
+            self.remote[to_resolve.game_state.pos] = self.reduce(self._remoteness_reduce, resolve_data)
             job.game_state.state = self.resolved[to_resolve.game_state.pos]
             job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
             logging.info("Position " + str(job.game_state.pos) + " has been resolved, remoteness: " + str(self.remote[to_resolve.game_state.pos]))
