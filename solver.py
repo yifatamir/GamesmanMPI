@@ -175,7 +175,7 @@ class Process:
         check_for_updates = 'check_for_updates, check_for_updates'
         if not(self._queue_to_str(work) == '' or self._queue_to_str(work) == check_for_updates):
             logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
-            logging.info("Machine " + str(self.rank) + " has resolved: " + str(self.resolved))
+            logging.info("Machine " + str(self.rank) + " has resolved: " + str(self.resolved) + " " + str(self.remote))
 
 
     def run(self):
@@ -346,6 +346,20 @@ class Process:
         else:
             return min(rem1.remoteness, rem2.remoteness) + 1
 
+    def reduce(self, function, iterable, initializer=None):
+        """
+        Equivilant to Python 2's reduce() or Python 3's
+        functools.reduce()
+        """
+        it = iter(iterable)
+        if initializer is None:
+            value = next(it)
+        else:
+            value = initializer
+        for element in it:
+            value = function(value, element)
+        return value
+
 
     def resolve(self, job):
         """
@@ -358,11 +372,11 @@ class Process:
         if self._counter[job.job_id] == 0: # Resolve _pending.
             to_resolve = self._pending[job.job_id][0] # Job
             resolve_data = self._pending[job.job_id][1:] # [GameState, GameState, ...]
-            self.resolved[to_resolve.game_state.pos] = reduce(self._res_red, resolve_data)
-            self.remote[to_resolve.game_state.pos] = reduce(self._remoteness_reduce, resolve_data)
+            self.resolved[to_resolve.game_state.pos] = self.reduce(self._res_red, resolve_data)
+            self.remote[to_resolve.game_state.pos] = self.reduce(self._remoteness_reduce, resolve_data)
             job.game_state.state = self.resolved[to_resolve.game_state.pos]
             job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
-            logging.info("Position " + str(job.game_state.pos) + " has been resolved.")
+            logging.info("Position " + str(job.game_state.pos) + " has been resolved, remoteness: " + str(self.remote[to_resolve.game_state.pos]))
             to = Job(Job.SEND_BACK, job.game_state, to_resolve.parent, to_resolve.job_id)
             self.add_job(to)
 
