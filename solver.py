@@ -258,7 +258,7 @@ class Process:
             # Try to see if it is_primitive:
             if job.game_state.is_primitive():
                 logging.info("Position " + str(job.game_state.pos) + " is primitive")
-                self.remote[job.game_state.pos] = 0
+                self.remote[job.game_state.pos] = PRIMITIVE_REMOTENESS
                 job.game_state.remoteness = PRIMITIVE_REMOTENESS
                 self.resolved[job.game_state.pos] = game_module.primitive(job.game_state.pos)
                 return Job(Job.SEND_BACK, job.game_state, job.parent, job.job_id)
