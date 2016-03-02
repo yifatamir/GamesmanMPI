@@ -33,6 +33,7 @@ logging.basicConfig(filename='logs/solver_log' + str(rank) + '.log', filemode='w
 
 WIN, LOSS, TIE, DRAW = "WIN", "LOSS", "TIE", "DRAW"
 UNKNOWN_REMOTENESS = -1
+PRIMITIVE_REMOTENESS = 0
 PRIMITIVES = (WIN, LOSS, TIE, DRAW)
 
 class GameState:
@@ -257,8 +258,8 @@ class Process:
             # Try to see if it is_primitive:
             if job.game_state.is_primitive():
                 logging.info("Position " + str(job.game_state.pos) + " is primitive")
-                self.remote[job.game_state.pos] = 0
-                job.game_state.remoteness = 0
+                self.remote[job.game_state.pos] = PRIMITIVE_REMOTENESS
+                job.game_state.remoteness = PRIMITIVE_REMOTENESS
                 self.resolved[job.game_state.pos] = game_module.primitive(job.game_state.pos)
                 return Job(Job.SEND_BACK, job.game_state, job.parent, job.job_id)
             return Job(Job.DISTRIBUTE, job.game_state, job.parent, job.job_id)
@@ -328,6 +329,14 @@ class Process:
         Private method that helps reduce in resolve.
         """
         # Probably can be done in a "cleaner" way.
+        if res2 is None:
+            if res1.state == WIN:
+                return LOSS
+            elif res1.state == LOSS:
+                return WIN
+            else:
+                return res1.state
+
         if res1.state == LOSS and res2.state == LOSS:
             return WIN
         elif res1.state == WIN or res2.state == WIN:
@@ -341,6 +350,9 @@ class Process:
         """
         Private method that helps reduce remoteness
         """
+        if rem2 is None:
+            return rem1.remoteness + 1
+
         if rem1.state == WIN and rem2.state == WIN:
             return max(rem1.remoteness, rem2.remoteness) + 1
         elif rem2.state == WIN:
@@ -349,6 +361,11 @@ class Process:
             return rem2.remoteness + 1
         else:
             return min(rem1.remoteness, rem2.remoteness) + 1
+
+    def reduce_helper(self, function, data):
+        if len(data) == 1:
+            return function(data[0], None)
+        return reduce(function, data)
 
     def resolve(self, job):
         """
@@ -361,15 +378,16 @@ class Process:
         if self._counter[job.job_id] == 0: # Resolve _pending.
             to_resolve = self._pending[job.job_id][0] # Job
             resolve_data = list(self._pending[job.job_id][1:]) # [GameState, GameState, ...]
-            res_str = "Resolve data:"
-            for state in resolve_data:
-                res_str = res_str + " " + str(state.state) + "/" + str(state.remoteness)
-            logging.info(res_str)
-            self.resolved[to_resolve.game_state.pos] = reduce(self._res_red, resolve_data)
-            self.remote[to_resolve.game_state.pos] = reduce(self._remoteness_reduce, resolve_data)
+            if __debug__:
+                res_str = "Resolve data:"
+                for state in resolve_data:
+                    res_str = res_str + " " + str(state.pos) + "/" + str(state.state) + "/" + str(state.remoteness)
+                logging.info(res_str)
+            self.resolved[to_resolve.game_state.pos] = self.reduce_helper(self._res_red, resolve_data)
+            self.remote[to_resolve.game_state.pos] = self.reduce_helper(self._remoteness_reduce, resolve_data)
             job.game_state.state = self.resolved[to_resolve.game_state.pos]
             job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
-            logging.info("Position " + str(job.game_state.pos) + " has been resolved, remoteness: " + str(self.remote[to_resolve.game_state.pos]))
+            logging.info("Resolved " + str(job.game_state.pos) + ", remoteness: " + str(self.remote[to_resolve.game_state.pos]))
             to = Job(Job.SEND_BACK, job.game_state, to_resolve.parent, to_resolve.job_id)
             self.add_job(to)
 
