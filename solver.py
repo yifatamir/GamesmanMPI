@@ -350,6 +350,11 @@ class Process:
         else:
             return min(rem1.remoteness, rem2.remoteness) + 1
 
+    def reduce_helper(self, function, data):
+        if len(data) == 1:
+            data.append(data[0])
+        return reduce(function, data)
+
     def resolve(self, job):
         """
         Given a list of WIN, LOSS, TIE, (DRAW, well maybe for later)
@@ -365,11 +370,12 @@ class Process:
             for state in resolve_data:
                 res_str = res_str + " " + str(state.state) + "/" + str(state.remoteness)
             logging.info(res_str)
-            self.resolved[to_resolve.game_state.pos] = reduce(self._res_red, resolve_data)
-            self.remote[to_resolve.game_state.pos] = reduce(self._remoteness_reduce, resolve_data)
+            self.resolved[to_resolve.game_state.pos] = self.reduce_helper(self._res_red, resolve_data)
+            self.remote[to_resolve.game_state.pos] = self.reduce_helper(self._remoteness_reduce, resolve_data)
+            logging.info(str(to_resolve.game_state.pos) + " is " + str(self.remote[to_resolve.game_state.pos]))
             job.game_state.state = self.resolved[to_resolve.game_state.pos]
             job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
-            logging.info("Position " + str(job.game_state.pos) + " has been resolved, remoteness: " + str(self.remote[to_resolve.game_state.pos]))
+            logging.info("Resolved " + str(job.game_state.pos) + ", remoteness: " + str(self.remote[to_resolve.game_state.pos]))
             to = Job(Job.SEND_BACK, job.game_state, to_resolve.parent, to_resolve.job_id)
             self.add_job(to)
 
