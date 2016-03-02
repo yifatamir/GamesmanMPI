@@ -377,13 +377,13 @@ class Process:
         if self._counter[job.job_id] == 0: # Resolve _pending.
             to_resolve = self._pending[job.job_id][0] # Job
             resolve_data = list(self._pending[job.job_id][1:]) # [GameState, GameState, ...]
-            res_str = "Resolve data:"
-            for state in resolve_data:
-                res_str = res_str + " " + str(state.state) + "/" + str(state.remoteness)
-            logging.info(res_str)
+            if __debug__:
+                res_str = "Resolve data:"
+                for state in resolve_data:
+                    res_str = res_str + " " + str(state.state) + "/" + str(state.remoteness)
+                logging.info(res_str)
             self.resolved[to_resolve.game_state.pos] = self.reduce_helper(self._res_red, resolve_data)
             self.remote[to_resolve.game_state.pos] = self.reduce_helper(self._remoteness_reduce, resolve_data)
-            logging.info(str(to_resolve.game_state.pos) + " is " + str(self.remote[to_resolve.game_state.pos]))
             job.game_state.state = self.resolved[to_resolve.game_state.pos]
             job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
             logging.info("Resolved " + str(job.game_state.pos) + ", remoteness: " + str(self.remote[to_resolve.game_state.pos]))
