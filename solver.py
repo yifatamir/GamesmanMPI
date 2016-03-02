@@ -33,6 +33,7 @@ logging.basicConfig(filename='logs/solver_log' + str(rank) + '.log', filemode='w
 
 WIN, LOSS, TIE, DRAW = "WIN", "LOSS", "TIE", "DRAW"
 UNKNOWN_REMOTENESS = -1
+PRIMITIVE_REMOTENESS = 0
 PRIMITIVES = (WIN, LOSS, TIE, DRAW)
 
 class GameState:
@@ -258,7 +259,7 @@ class Process:
             if job.game_state.is_primitive():
                 logging.info("Position " + str(job.game_state.pos) + " is primitive")
                 self.remote[job.game_state.pos] = 0
-                job.game_state.remoteness = 0
+                job.game_state.remoteness = PRIMITIVE_REMOTENESS
                 self.resolved[job.game_state.pos] = game_module.primitive(job.game_state.pos)
                 return Job(Job.SEND_BACK, job.game_state, job.parent, job.job_id)
             return Job(Job.DISTRIBUTE, job.game_state, job.parent, job.job_id)
@@ -350,7 +351,7 @@ class Process:
         Private method that helps reduce remoteness
         """
         if rem2 is None:
-            return rem1.remoteness
+            return rem1.remoteness + 1
 
         if rem1.state == WIN and rem2.state == WIN:
             return max(rem1.remoteness, rem2.remoteness) + 1
@@ -380,7 +381,7 @@ class Process:
             if __debug__:
                 res_str = "Resolve data:"
                 for state in resolve_data:
-                    res_str = res_str + " " + str(state.state) + "/" + str(state.remoteness)
+                    res_str = res_str + " " + str(state.pos) + "/" + str(state.state) + "/" + str(state.remoteness)
                 logging.info(res_str)
             self.resolved[to_resolve.game_state.pos] = self.reduce_helper(self._res_red, resolve_data)
             self.remote[to_resolve.game_state.pos] = self.reduce_helper(self._remoteness_reduce, resolve_data)
