@@ -328,6 +328,14 @@ class Process:
         Private method that helps reduce in resolve.
         """
         # Probably can be done in a "cleaner" way.
+        if res2 is None:
+            if res1.state == WIN:
+                return LOSS
+            elif res1.state == LOSS:
+                return WIN
+            else:
+                return res1.state
+
         if res1.state == LOSS and res2.state == LOSS:
             return WIN
         elif res1.state == WIN or res2.state == WIN:
@@ -341,6 +349,9 @@ class Process:
         """
         Private method that helps reduce remoteness
         """
+        if rem2 is None:
+            return rem1.remoteness
+
         if rem1.state == WIN and rem2.state == WIN:
             return max(rem1.remoteness, rem2.remoteness) + 1
         elif rem2.state == WIN:
@@ -352,7 +363,7 @@ class Process:
 
     def reduce_helper(self, function, data):
         if len(data) == 1:
-            data.append(data[0])
+            return function(data[0], None)
         return reduce(function, data)
 
     def resolve(self, job):
