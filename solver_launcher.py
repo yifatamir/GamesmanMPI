@@ -1,18 +1,10 @@
 from mpi4py import MPI
 from game_state.GameState import GameState
-world_size = 4
 from process.Process import Process
 from process.Job import Job
 import sys
 import inspect
 import logging
-import time
-if sys.version_info[0] >= 3:
-    from functools import reduce
-    from queue import PriorityQueue
-else:
-    from Queue import PriorityQueue
-# from enum import Enum
 
 # Import game definition from file specified in command line
 game_module = __import__(sys.argv[1].replace('.py', ''))

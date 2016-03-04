@@ -7,7 +7,6 @@ PRIMITIVES = (WIN, LOSS, TIE, DRAW)
 UNKNOWN_REMOTENESS = -1
 
 comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
 size = comm.Get_size()
 game_module = __import__(sys.argv[1].replace('.py', ''))
 
