@@ -4,7 +4,7 @@
 
 LOSS, WIN, TIE, DRAW, UNDECIDED = "LOSS", "WIN", "TIE", "DRAW", "UNDECIDED"
 
-initial_position = 4
+initial_position = 5
 
 def gen_moves(x):
     if x == 1:
