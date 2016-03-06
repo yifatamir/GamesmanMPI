@@ -249,18 +249,24 @@ class Process:
         self._pending[job.job_id].append(job.game_state) # [Job, GameState, ... ]
         if self._counter[job.job_id] == 0: # Resolve _pending.
             to_resolve = self._pending[job.job_id][0] # Job
-            resolve_data = list(self._pending[job.job_id][1:]) # [GameState, GameState, ...]
-            if __debug__:
-                res_str = "Resolve data:"
-                for state in resolve_data:
-                    res_str = res_str + " " + str(state.pos) + "/" + str(state.state) + "/" + str(state.remoteness)
+            if to_resolve.game_state.is_primitive():
+                self.resolved[to_resolve.game_state.pos] = game_module.primitive(to_resolve.game_state.pos)
+                self.remote[to_resolve.game_state.pos] = 0
+                job.game_state.state = self.resolved[to_resolve.game_state.pos]
+                job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
+            else:
+                resolve_data = list(self._pending[job.job_id][1:]) # [GameState, GameState, ...]
+                if __debug__:
+                    res_str = "Resolve data:"
+                    for state in resolve_data:
+                        res_str = res_str + " " + str(state.pos) + "/" + str(state.state) + "/" + str(state.remoteness)
                     logging.info(res_str)
-            state_red = [gs.state for gs in resolve_data]
-            #remoteness_red = [gs.remoteness for gs in resolve_data]
-            self.resolved[to_resolve.game_state.pos] = self.reduce_helper(self._res_red, state_red)
-            self.remote[to_resolve.game_state.pos] = self.reduce_helper(self._remoteness_reduce, resolve_data)
-            job.game_state.state = self.resolved[to_resolve.game_state.pos]
-            job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
-            logging.info("Resolved " + str(job.game_state.pos) + "to " + str(job.game_state.state) + ", remoteness: " + str(self.remote[to_resolve.game_state.pos]))
+                state_red = [gs.state for gs in resolve_data]
+                #remoteness_red = [gs.remoteness for gs in resolve_data]
+                self.resolved[to_resolve.game_state.pos] = self.reduce_helper(self._res_red, state_red)
+                self.remote[to_resolve.game_state.pos] = self.reduce_helper(self._remoteness_reduce, resolve_data)
+                job.game_state.state = self.resolved[to_resolve.game_state.pos]
+                job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
+            logging.info("Resolved " + str(job.game_state.pos) + " to " + str(job.game_state.state) + ", remoteness: " + str(self.remote[to_resolve.game_state.pos]))
             to = Job(Job.SEND_BACK, job.game_state, to_resolve.parent, to_resolve.job_id)
             self.add_job(to)
