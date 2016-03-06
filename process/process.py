@@ -1,8 +1,8 @@
-from game_state.GameState import GameState
+from game_state.game_state import GameState
 import sys
 import time
 import logging
-from Job import Job
+from .job import Job
 from mpi4py import MPI
 if sys.version_info[0] >= 3:
     from functools import reduce
@@ -187,7 +187,7 @@ class Process:
             self.received.append(comm.recv(source=MPI.ANY_SOURCE))
             for job in self.received:
                 self.add_job(job)
-        del self.received[:] 
+        del self.received[:]
 
     def send_back(self, job):
         """

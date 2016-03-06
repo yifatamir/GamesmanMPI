@@ -1,7 +1,7 @@
 from mpi4py import MPI
-from game_state.GameState import GameState
-from process.Process import Process
-from process.Job import Job
+from game_state.game_state import GameState
+from process.process import Process
+from process.job import Job
 import sys
 import inspect
 import logging
