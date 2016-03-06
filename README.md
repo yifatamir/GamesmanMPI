@@ -24,10 +24,15 @@ There are four elements which a game class must implement:
 
 The exact way in which you represent a game state or moves (ints, lists, etc.) does not matter, as long as you are consistant. For the puposes of this guide, we'll use an integer to represent our gamestate and moves, since we our example is Four-To-One.
 
-#### initial_position
-This is simply a consant value of your gamestate type. In Four-To-One, we define it as
+#### initial_position( )
+###### Parameters
+- returns: *gamestate-type*
+  - The initial position for game
+
+###### Example
 ```python
-initial_position = 4
+def initial_position(x):
+    return 4
 ```
 #### gen_moves( *gs* )
 ###### Parameters
