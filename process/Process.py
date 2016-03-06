@@ -48,7 +48,7 @@ class Process:
         For debugging purposes.
         Prints the job type for each job in the job queue.
         """
-        return ', '.join([str(j.job_type) for j in q.queue])
+        return ', '.join([str(j.job_type) + " " + str(j.game_state.pos) for j in q.queue])
 
     def _log_work(self, work):
         check_for_updates = 'check_for_updates, check_for_updates'
@@ -165,12 +165,12 @@ class Process:
         # fail, so we will need to worry about error checking at
         # some point.
         for child in children:
-            job = Job(Job.LOOK_UP, child, self.rank, self._id)
-            logging.info("Machine " + str(rank)
-                       + " found child " + str(job.game_state.pos)
+            new_job = Job(Job.LOOK_UP, child, self.rank, self._id)
+            logging.info("Machine " + str(self.rank)
+                       + " found child " + str(new_job.game_state.pos)
                        + ", sending to " + str(child.get_hash()))
 
-            comm.isend(job,  dest = child.get_hash())
+            comm.send(new_job,  dest = child.get_hash())
 
         self._update_id()
 
@@ -187,8 +187,7 @@ class Process:
             self.received.append(comm.recv(source=MPI.ANY_SOURCE))
             for job in self.received:
                 self.add_job(job)
-
-            self.recieved = [] # Clear recieved.
+        del self.received[:] 
 
     def send_back(self, job):
         """
