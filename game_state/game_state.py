@@ -46,7 +46,7 @@ class GameState:
         has been found, returns UNKNOWN_REMOTENESS
         otherwise
         """
-        if self._remoteness == None:
+        if self._remoteness is None:
             return UNKNOWN_REMOTENESS
         else:
             return self._remoteness

@@ -24,7 +24,7 @@ class Process:
     """
     IS_FINISHED = False
 
-    INITIAL_POS = GameState(game_module.initial_position)
+    INITIAL_POS = GameState(game_module.initial_position())
     ROOT = INITIAL_POS.get_hash()
 
     def dispatch(self, job):
@@ -52,9 +52,7 @@ class Process:
 
     def _log_work(self, work):
         check_for_updates = 'check_for_updates, check_for_updates'
-        if not(self._queue_to_str(work) == '' or self._queue_to_str(work) == check_for_updates):
-            logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
-            logging.info("Machine " + str(self.rank) + " has resolved: " + str(self.resolved) + " " + str(self.remote))
+        logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
 
 
     def run(self):
@@ -63,9 +61,7 @@ class Process:
         """
         # TODO
         while not Process.IS_FINISHED:
-            if __debug__:
-                time.sleep(.05)
-                self._log_work(self.work)
+            self._log_work(self.work)
             if self.rank == Process.ROOT and Process.INITIAL_POS.pos in self.resolved:
                 Process.IS_FINISHED = True
                 logging.info('Finished')
@@ -126,8 +122,10 @@ class Process:
         logging.info("Machine " + str(rank) + " looking up " + str(job.game_state.pos))
         try:
             res = self.resolved[job.game_state.pos]
+            rem = self.remote[job.game_state.pos]
             logging.info("Position " + str(job.game_state.pos) + " has been resolved")
             job.game_state.state = res
+            job.game_state.remoteness = rem
             return Job(Job.SEND_BACK, job.game_state, job.parent, job.job_id)
         except KeyError: # Not in dictionary.
             # Try to see if it is_primitive:
@@ -158,9 +156,9 @@ class Process:
         """
         children = list(job.game_state.expand())
         # Add new pending state information.
-        #logging.info('Found children ' + ', '.join([str(c.pos) for c in children]))
+        logging.info('Found children ' + ', '.join([str(c.pos) for c in children]))
         self._add_pending_state(job, children)
-        #logging.info('Found children ' + ', '.join([str(c.pos) for c in children]))
+        logging.info('Found children ' + ', '.join([str(c.pos) for c in children]))
         # Keep a list of the requests made by isend. Something may
         # fail, so we will need to worry about error checking at
         # some point.
@@ -204,20 +202,20 @@ class Process:
         """
         # Probably can be done in a "cleaner" way.
         if res2 is None:
-            if res1.state == WIN:
+            if res1 == WIN:
                 return LOSS
-            elif res1.state == LOSS:
+            elif res1 == LOSS:
                 return WIN
             else:
-                return res1.state
+                return res1
 
-        if res1.state == LOSS and res2.state == LOSS:
+        if res1 == LOSS and res2 == LOSS:
             return WIN
-        elif res1.state == WIN or res2.state == WIN:
+        elif res1 == WIN or res2 == WIN:
             return LOSS
-        elif res1.state == TIE or res2.state == TIE:
+        elif res1 == TIE or res2 == TIE:
             return TIE
-        elif res1.state == DRAW or res2.state == DRAW:
+        elif res1 == DRAW or res2 == DRAW:
             return DRAW
 
     def _remoteness_reduce(self, rem1, rem2):
@@ -256,11 +254,13 @@ class Process:
                 res_str = "Resolve data:"
                 for state in resolve_data:
                     res_str = res_str + " " + str(state.pos) + "/" + str(state.state) + "/" + str(state.remoteness)
-                logging.info(res_str)
-            self.resolved[to_resolve.game_state.pos] = self.reduce_helper(self._res_red, resolve_data)
+                    logging.info(res_str)
+            state_red = [gs.state for gs in resolve_data]
+            #remoteness_red = [gs.remoteness for gs in resolve_data]
+            self.resolved[to_resolve.game_state.pos] = self.reduce_helper(self._res_red, state_red)
             self.remote[to_resolve.game_state.pos] = self.reduce_helper(self._remoteness_reduce, resolve_data)
             job.game_state.state = self.resolved[to_resolve.game_state.pos]
             job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
-            logging.info("Resolved " + str(job.game_state.pos) + ", remoteness: " + str(self.remote[to_resolve.game_state.pos]))
+            logging.info("Resolved " + str(job.game_state.pos) + "to " + str(job.game_state.state) + ", remoteness: " + str(self.remote[to_resolve.game_state.pos]))
             to = Job(Job.SEND_BACK, job.game_state, to_resolve.parent, to_resolve.job_id)
             self.add_job(to)
