@@ -218,21 +218,24 @@ class Process:
         elif res1 == DRAW or res2 == DRAW:
             return DRAW
 
-    def _remoteness_reduce(self, rem1, rem2):
+    def _remote_red(self, rem1, rem2):
         """
         Private method that helps reduce remoteness
+        Takes in two GameStates, and returns a Job with
+        with an appropriate remoteness.
         """
         if rem2 is None:
-            return rem1.remoteness + 1
+            return GameState(None, rem1.remoteness + 1, rem1.state)
 
         if rem1.state == WIN and rem2.state == WIN:
-            return max(rem1.remoteness, rem2.remoteness) + 1
+            return GameState(None, max(rem1.remoteness, rem2.remoteness) + 1, rem1.state)
         elif rem2.state == WIN:
-            return rem1.remoteness + 1
+            return GameState(None, rem1.remoteness + 1, rem2.state)
         elif rem1.state == WIN:
-            return rem2.remoteness + 1
+            return GameState(None, rem2.remoteness + 1, rem1.state)
         else:
-            return min(rem1.remoteness, rem2.remoteness) + 1
+            # Use rem1.state by default, but rem2.state should work too.
+            return GameState(None, min(rem1.remoteness, rem2.remoteness) + 1, rem1.state)
 
     def reduce_helper(self, function, data):
         if len(data) == 1:
@@ -264,7 +267,7 @@ class Process:
                 state_red = [gs.state for gs in resolve_data]
                 #remoteness_red = [gs.remoteness for gs in resolve_data]
                 self.resolved[to_resolve.game_state.pos] = self.reduce_helper(self._res_red, state_red)
-                self.remote[to_resolve.game_state.pos] = self.reduce_helper(self._remoteness_reduce, resolve_data)
+                self.remote[to_resolve.game_state.pos] = self.reduce_helper(self._remote_red, resolve_data).remoteness
                 job.game_state.state = self.resolved[to_resolve.game_state.pos]
                 job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
             logging.info("Resolved " + str(job.game_state.pos) + " to " + str(job.game_state.state) + ", remoteness: " + str(self.remote[to_resolve.game_state.pos]))
