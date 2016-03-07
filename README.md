@@ -6,11 +6,20 @@
 ## Loading a Game
 Games to be solved are loaded via the command line, with the following syntax:
 ```
-mpiexec -n <number of processes> python solver.py <your game file>
+mpiexec -n <number of processes> python solver_launcher.py <your game file>
 ```
 For example, you could load our example game, Four-To-One, by running
 ```
-mpiexec -n 5 python solver.py four_to_one.py
+mpiexec -n 5 python solver_launcher.py four_to_one.py
+```
+
+Also included is a very testing script, `testing.sh`, which allows you to time the game solver within a certain range of process counts, and also compare that to local solver performance. Use the following syntax:
+```
+bash testing.sh <your game file> <min number of processes> <max number of processes>
+```
+So to test Four-To-One with process counts ranging from 4 to 12, we would run
+```
+bash testing.sh four_to_one.py 4 12
 ```
 
 Your game file must follow the conventions outlined in the API 
