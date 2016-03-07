@@ -1,6 +1,7 @@
 from collections import deque
 import sys
-game_module = __import__(sys.argv[1].replace('.py', ''))
+import imp
+game_module = imp.load_source('game_module', sys.argv[1])
 
 LOSS, WIN, TIE, DRAW, UNDECIDED = "LOSS", "WIN", "TIE", "DRAW", "UNDECIDED"
 
