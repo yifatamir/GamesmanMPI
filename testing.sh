@@ -5,7 +5,7 @@ SYM="#"
 for i in `seq $2 $3`;
   do
     prog=""
-    for j in `seq 0 $i`;
+    for j in `seq $2 $i`;
       do
         prog=$prog$SYM
       done
