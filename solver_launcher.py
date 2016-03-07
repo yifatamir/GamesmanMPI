@@ -24,7 +24,7 @@ rank = comm.Get_rank()
 size = comm.Get_size()
 
 # Set up our logging system
-logging.basicConfig(filename='logs/solver_log' + str(rank) + '.log', filemode='w', level=logging.DEBUG)
+logging.basicConfig(filename='logs/solver_log' + str(rank) + '.log', filemode='w', level=logging.WARNING)
 
 initial_position = game_module.initial_position()
 
