@@ -13,6 +13,7 @@ For example, you could load our example game, Four-To-One, by running
 mpiexec -n 5 python solver_launcher.py four_to_one.py
 ```
 
+## Testing
 Also included is a very testing script, `testing.sh`, which allows you to time the game solver within a certain range of process counts, and also compare that to local solver performance. Use the following syntax:
 ```
 bash testing.sh <your game file> <min number of processes> <max number of processes>
