@@ -5,9 +5,10 @@ from process.job import Job
 import sys
 import inspect
 import logging
+import imp
 
 # Import game definition from file specified in command line
-game_module = __import__(sys.argv[1].replace('.py', ''))
+game_module = imp.load_source('game_module', sys.argv[1])
 
 # Make sure the game is properly defined
 assert(hasattr(game_module, 'initial_position'))
