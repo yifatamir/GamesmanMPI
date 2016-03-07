@@ -1,15 +1,15 @@
 #!/bin/bash
 echo Beginning testing for $1 from $2 to $3 > tests/time_results.txt
 echo Beginning testing for $1 from $2 to $3 > tests/solve_results.txt
-SYM="#"
+TOTAL=`expr $3 - $2`
 for i in `seq $2 $3`;
   do
-    prog=""
-    for j in `seq $2 $i`;
-      do
-        prog=$prog$SYM
-      done
-    echo -ne "$prog\r"
+    step=`expr $i - $2`
+    sp=`expr $step \* 100`
+    percent=$((sp / TOTAL))
+    pc=$((percent / 5))
+
+    echo -ne "$percent%\r"
     echo -ne "\n" >> tests/time_results.txt
     echo -ne "\n" >> tests/solve_results.txt
     echo Testing with $i processes >> tests/time_results.txt
@@ -29,6 +29,5 @@ if [ "$4" = "-l" ]; then
   echo --------- >> tests/time_results.txt
   echo --------- >> tests/solve_results.txt
   (time python solve_local.py $1) >> tests/solve_results.txt 2>> tests/time_results.txt
-
 fi
 echo Done with all tests
