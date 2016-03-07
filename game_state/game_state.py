@@ -1,6 +1,7 @@
 from mpi4py import MPI
 import hashlib
 import sys
+import imp
 
 WIN, LOSS, TIE, DRAW = "WIN", "LOSS", "TIE", "DRAW"
 PRIMITIVES = (WIN, LOSS, TIE, DRAW)
@@ -8,7 +9,7 @@ UNKNOWN_REMOTENESS = -1
 
 comm = MPI.COMM_WORLD
 size = comm.Get_size()
-game_module = __import__(sys.argv[1].replace('.py', ''))
+game_module = imp.load_source('game_module', sys.argv[1])
 
 class GameState:
     """

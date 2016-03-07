@@ -9,8 +9,9 @@ if sys.version_info[0] >= 3:
     from queue import PriorityQueue
 else:
     from Queue import PriorityQueue
+import imp
 
-game_module = __import__(sys.argv[1].replace('.py', ''))
+game_module = imp.load_source('game_module', sys.argv[1])
 PRIMITIVE_REMOTENESS = 0
 WIN, LOSS, TIE, DRAW = "WIN", "LOSS", "TIE", "DRAW"
 
