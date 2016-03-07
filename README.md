@@ -10,7 +10,7 @@ mpiexec -n <number of processes> python solver_launcher.py <your game file>
 ```
 For example, you could load our example game, Four-To-One, by running
 ```
-mpiexec -n 5 python solver_launcher.py four_to_one.py
+mpiexec -n 5 python solver_launcher.py test_games/four_to_one.py
 ```
 
 ## Testing
