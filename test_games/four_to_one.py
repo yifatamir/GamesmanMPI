@@ -2,7 +2,7 @@
 # 4 - 1 Portion
 #################################################
 
-LOSS, WIN, TIE, DRAW, UNDECIDED = "LOSS", "WIN", "TIE", "DRAW", "UNDECIDED"
+import src.utils
 
 def initial_position():
     return 4
@@ -17,6 +17,6 @@ def do_move(x, move):
 
 def primitive(x):
     if x <= 0:
-        return LOSS
+        return src.utils.LOSS
     else:
-        return UNDECIDED
+        return src.utils.UNDECIDED
