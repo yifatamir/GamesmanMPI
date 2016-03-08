@@ -8,9 +8,6 @@ if sys.version_info[0] >= 3:
 else:
     from Queue import PriorityQueue
 import logging
-import imp
-
-game_module = imp.load_source('game_module', sys.argv[1])
 
 PRIMITIVE_REMOTENESS = 0
 WIN, LOSS, TIE, DRAW = "WIN", "LOSS", "TIE", "DRAW"
@@ -69,14 +66,15 @@ class Process:
                 continue
             self.add_job(result)
 
-    def __init__(self, rank, world_size, send_method, recv_method, comm):
+    def __init__(self, rank, world_size, send_method, recv_method, comm, game_module):
         self.rank = rank
         self.world_size = world_size
         self.send = send_method
         self.recv = recv_method
         self.comm = comm
+        self.game_module = game_module
 
-        self.initial_pos = GameState(game_module.initial_position())
+        self.initial_pos = GameState(self.game_module.initial_position())
         self.root = self.initial_pos.get_hash(self.world_size)
 
         self.work = PriorityQueue()
@@ -134,7 +132,7 @@ class Process:
                 logging.info("Position " + str(job.game_state.pos) + " is primitive")
                 self.remote[job.game_state.pos] = PRIMITIVE_REMOTENESS
                 job.game_state.remoteness = PRIMITIVE_REMOTENESS
-                self.resolved[job.game_state.pos] = game_module.primitive(job.game_state.pos)
+                self.resolved[job.game_state.pos] = self.game_module.primitive(job.game_state.pos)
                 return Job(Job.SEND_BACK, job.game_state, job.parent, job.job_id)
             return Job(Job.DISTRIBUTE, job.game_state, job.parent, job.job_id)
 
@@ -254,7 +252,7 @@ class Process:
         if self._counter[job.job_id] == 0: # Resolve _pending.
             to_resolve = self._pending[job.job_id][0] # Job
             if to_resolve.game_state.is_primitive():
-                self.resolved[to_resolve.game_state.pos] = game_module.primitive(to_resolve.game_state.pos)
+                self.resolved[to_resolve.game_state.pos] = self.game_module.primitive(to_resolve.game_state.pos)
                 self.remote[to_resolve.game_state.pos] = 0
                 job.game_state.state = self.resolved[to_resolve.game_state.pos]
                 job.game_state.remoteness = self.remote[to_resolve.game_state.pos]

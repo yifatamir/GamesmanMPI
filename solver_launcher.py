@@ -45,7 +45,7 @@ logging.basicConfig(filename='logs/solver_log' + str(rank) + '.log', filemode='w
 
 initial_position = game_module.initial_position()
 
-process = Process(rank, size, send, recv, comm)
+process = Process(rank, size, send, recv, comm, game_module)
 if process.rank == process.root:
     initial_gamestate = GameState(initial_position)
     initial_job = Job(Job.LOOK_UP, initial_gamestate, process.rank, 0) # Defaults at zero, TODO: Fix abstraction violation.
