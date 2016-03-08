@@ -76,3 +76,11 @@ class GameState:
         # TODO: Don't violate abstraction barrier...
         # Notably: ("WIN", "LOSS", "TIE", "DRAW")
         return self.state in PRIMITIVES
+
+    @property
+    def primitive(self):
+        """
+        Determines what kind of primitive a
+        variable is: WLTD?
+        """
+        return game_module.primitive(self.pos)

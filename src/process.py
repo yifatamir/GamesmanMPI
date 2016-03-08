@@ -132,7 +132,7 @@ class Process:
                 logging.info("Position " + str(job.game_state.pos) + " is primitive")
                 self.remote[job.game_state.pos] = PRIMITIVE_REMOTENESS
                 job.game_state.remoteness = PRIMITIVE_REMOTENESS
-                self.resolved[job.game_state.pos] = self.game_module.primitive(job.game_state.pos)
+                self.resolved[job.game_state.pos] = job.game_state.primitive
                 return Job(Job.SEND_BACK, job.game_state, job.parent, job.job_id)
             return Job(Job.DISTRIBUTE, job.game_state, job.parent, job.job_id)
 
@@ -252,7 +252,7 @@ class Process:
         if self._counter[job.job_id] == 0: # Resolve _pending.
             to_resolve = self._pending[job.job_id][0] # Job
             if to_resolve.game_state.is_primitive():
-                self.resolved[to_resolve.game_state.pos] = self.game_module.primitive(to_resolve.game_state.pos)
+                self.resolved[to_resolve.game_state.pos] = to_resolve.game_state.primitive
                 self.remote[to_resolve.game_state.pos] = 0
                 job.game_state.state = self.resolved[to_resolve.game_state.pos]
                 job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
