@@ -16,7 +16,6 @@ class Process:
     """
     IS_FINISHED = False
 
-
     def dispatch(self, job):
         """
         Given a particular kind of job, decide what to do with
