@@ -6,6 +6,7 @@ import inspect
 import logging
 import imp
 import argparse
+import src.utils
 
 
 parser = argparse.ArgumentParser()
@@ -17,16 +18,17 @@ args = parser.parse_args()
 
 # Load file.
 game_module = imp.load_source('game_module', args.game_file)
+src.utils.game_module = game_module
 
 # Make sure the game is properly defined
-assert(hasattr(game_module, 'initial_position'))
-assert(hasattr(game_module, 'do_move'))
-assert(hasattr(game_module, 'gen_moves'))
-assert(hasattr(game_module, 'primitive'))
-assert(inspect.isfunction(game_module.initial_position))
-assert(inspect.isfunction(game_module.do_move))
-assert(inspect.isfunction(game_module.gen_moves))
-assert(inspect.isfunction(game_module.primitive))
+assert(hasattr(src.utils.game_module, 'initial_position'))
+assert(hasattr(src.utils.game_module, 'do_move'))
+assert(hasattr(src.utils.game_module, 'gen_moves'))
+assert(hasattr(src.utils.game_module, 'primitive'))
+assert(inspect.isfunction(src.utils.game_module.initial_position))
+assert(inspect.isfunction(src.utils.game_module.do_move))
+assert(inspect.isfunction(src.utils.game_module.gen_moves))
+assert(inspect.isfunction(src.utils.game_module.primitive))
 
 comm = MPI.COMM_WORLD
 
@@ -38,7 +40,7 @@ if args.numpy:
 # Set up our logging system
 logging.basicConfig(filename='logs/solver_log' + str(comm.Get_rank()) + '.log', filemode='w', level=logging.WARNING)
 
-initial_position = game_module.initial_position()
+initial_position = src.utils.game_module.initial_position()
 
 process = Process(comm.Get_rank(), comm.Get_size(), comm)
 if process.rank == process.root:

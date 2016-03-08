@@ -8,9 +8,9 @@ if sys.version_info[0] >= 3:
 else:
     from Queue import PriorityQueue
 import logging
+from utils import *
 
 PRIMITIVE_REMOTENESS = 0
-WIN, LOSS, TIE, DRAW = "WIN", "LOSS", "TIE", "DRAW"
 
 class Process:
     """
