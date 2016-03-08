@@ -16,11 +16,11 @@ mpiexec -n 5 python solver_launcher.py test_games/four_to_one.py
 ## Testing
 Also included is a very testing script, `testing.sh`, which allows you to time the game solver within a certain range of process counts, and also compare that to local solver performance. Use the following syntax:
 ```
-bash testing.sh <your game file> <min number of processes> <max number of processes> <-l>
+bash testing.sh <your game file> <min number of processes> <max number of processes> <number of runs per process> <-l> <-np>
 ```
-Where the `-l` tag includes testing with the local solver. So to test Four-To-One with process counts ranging from 4 to 12, including the local solver, we would run
+Where the `-l` tag includes testing with the local solver, and the `-np` flag runs the process with NumPy optimizations. Note that flags can occur in any order. To test Four-To-One with process counts ranging from 4 to 12, running each option 3 times, including the local solver, with the NumPy optimization, we would run
 ```
-bash testing.sh four_to_one.py 4 12 -l
+bash testing.sh four_to_one.py 4 12 3 -l -np
 ```
 
 Your game file must follow the conventions outlined in the API 
