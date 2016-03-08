@@ -9,7 +9,7 @@ O = 'O'
 BLANK = '_'
 
 def initial_position():
-    return BLANK * 9
+    return BLANK * WIDTH * HEIGHT
 
 def toLoc(i):
     x = i % WIDTH
