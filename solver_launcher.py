@@ -29,25 +29,20 @@ assert(inspect.isfunction(game_module.gen_moves))
 assert(inspect.isfunction(game_module.primitive))
 
 comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-size = comm.Get_size()
-
-send = comm.send
-recv = comm.recv
 
 # Check for optimizations.
 if args.numpy:
-    send = comm.Send
-    recv = comm.Recv
+    comm.send = comm.Send
+    comm.recv = comm.Recv
 
 # Set up our logging system
-logging.basicConfig(filename='logs/solver_log' + str(rank) + '.log', filemode='w', level=logging.WARNING)
+logging.basicConfig(filename='logs/solver_log' + str(comm.Get_rank()) + '.log', filemode='w', level=logging.WARNING)
 
 initial_position = game_module.initial_position()
 
-process = Process(rank, size, send, recv, comm)
+process = Process(comm.Get_rank(), comm.Get_size(), comm)
 if process.rank == process.root:
-    initial_gamestate = GameState(initial_position)
+    initial_gamestate = GameState(GameState.INITIAL_POS)
     initial_job = Job(Job.LOOK_UP, initial_gamestate, process.rank, 0) # Defaults at zero, TODO: Fix abstraction violation.
     process.add_job(initial_job)
 
