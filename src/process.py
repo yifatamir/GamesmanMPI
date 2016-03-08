@@ -22,14 +22,14 @@ class Process:
         it, this can range from lookup, to distributing, to
         checking for recieving.
         """
-        _dispatch_table = [
+        _dispatch_table = (
             self.finished,
             self.lookup,
             self.resolve,
             self.send_back,
             self.distribute,
             self.check_for_updates
-        ]
+        )
         return _dispatch_table[job.job_type](job)
 
     def _queue_to_str(self, q):
