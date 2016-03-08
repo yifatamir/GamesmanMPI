@@ -1,8 +1,7 @@
 import sys
-import time
+from mpi4py import MPI
 from game_state import GameState
 from job import Job
-from mpi4py import MPI
 if sys.version_info[0] >= 3:
     from functools import reduce
     from queue import PriorityQueue
