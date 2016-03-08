@@ -203,21 +203,35 @@ class Process:
         """
         # Probably can be done in a "cleaner" way.
         if res2 is None:
-            if res1 == WIN:
+            if res1.state == WIN:
                 return LOSS
-            elif res1 == LOSS:
+            elif res1.state == LOSS:
                 return WIN
             else:
-                return res1
+                return res1.state
 
-        if res1 == LOSS and res2 == LOSS:
-            return WIN
-        elif res1 == WIN or res2 == WIN:
+        states = {WIN: 0, LOSS : 1, TIE: 2, DRAW: 3}
+        state1 = states[res1.state]
+        state2 = states[res2.state]
+
+        if (state1*state2 == 0): #at least one of them is a WIN
             return LOSS
-        elif res1 == TIE or res2 == TIE:
+        if (state1*state2 == 1): #both of them are LOSSes
+            return WIN
+        if ((state1*state2) % 2 == 0): #at least one of them is a TIE
             return TIE
-        elif res1 == DRAW or res2 == DRAW:
+        # if ((state1*state2) % 3 == 0):
+        else:
             return DRAW
+        # original code:
+        # if res1.state == LOSS and res2.state == LOSS:
+        #     return WIN
+        # elif res1.state == WIN or res2.state == WIN:
+        #     return LOSS
+        # elif res1.state == TIE or res2.state == TIE:
+        #     return TIE
+        # elif res1.state == DRAW or res2.state == DRAW:
+        #     return DRAW
 
     def _remote_red(self, rem1, rem2):
         """
