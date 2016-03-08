@@ -74,7 +74,7 @@ class Process:
         self.comm = comm
         self.game_module = game_module
 
-        self.initial_pos = GameState(self.game_module.initial_position())
+        self.initial_pos = GameState(GameState.INITIAL_POS)
         self.root = self.initial_pos.get_hash(self.world_size)
 
         self.work = PriorityQueue()

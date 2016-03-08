@@ -14,6 +14,9 @@ class GameState:
     by the user, just makes things easier for the
     framework.
     """
+
+    INITIAL_POS = game_module.initial_position()
+
     def __init__(self, pos, remoteness=None, state=None):
         self.pos = pos
         self._state = state           # Useful optional constructor for reduction 
