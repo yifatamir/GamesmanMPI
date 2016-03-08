@@ -1,14 +1,14 @@
 import sys
 from mpi4py import MPI
-from game_state import GameState
-from job import Job
+from .game_state import GameState
+from .job import Job
+from .utils import *
 if sys.version_info[0] >= 3:
     from functools import reduce
     from queue import PriorityQueue
 else:
     from Queue import PriorityQueue
 import logging
-from utils import *
 
 class Process:
     """
@@ -265,7 +265,7 @@ class Process:
                 self.remote[to_resolve.game_state.pos] = self.reduce_helper(self._remote_red, resolve_data).remoteness
                 job.game_state.state = self.resolved[to_resolve.game_state.pos]
                 job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
-            logging.info("Resolved " + str(job.game_state.pos) + 
+            logging.info("Resolved " + str(job.game_state.pos) +
                          " to " + str(job.game_state.state) +
                          ", remoteness: " + str(self.remote[to_resolve.game_state.pos]))
             to = Job(Job.SEND_BACK, job.game_state, to_resolve.parent, to_resolve.job_id)

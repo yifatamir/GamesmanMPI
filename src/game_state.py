@@ -1,5 +1,5 @@
 import hashlib
-from utils import *
+from .utils import *
 
 class GameState:
     """
@@ -12,7 +12,7 @@ class GameState:
 
     def __init__(self, pos, remoteness=None, state=None):
         self.pos = pos
-        self._state = state           # Useful optional constructor for reduction 
+        self._state = state           # Useful optional constructor for reduction
         self._remoteness = remoteness # purposes.
 
     def get_hash(self, world_size):
