@@ -69,8 +69,6 @@ class GameState:
         Determines the difference between
         WLTD and UNDECIDED
         """
-        # TODO: Don't violate abstraction barrier...
-        # Notably: ("WIN", "LOSS", "TIE", "DRAW")
         return self.state in PRIMITIVES
 
     @property
