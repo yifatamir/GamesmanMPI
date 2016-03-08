@@ -4,12 +4,12 @@ class Job:
     jobs in a queue for the processes to work on.
     """
     # A list of possible job types.
+    FINISHED          = 0
     LOOK_UP           = 1
+    RESOLVE           = 2
+    SEND_BACK         = 3
     DISTRIBUTE        = 4
     CHECK_FOR_UPDATES = 5
-    SEND_BACK         = 3
-    FINISHED          = 0
-    RESOLVE           = 2
 
     def _assign_priority(self):
         self.priority = self.job_type
