@@ -1,32 +1,20 @@
-from game_state.game_state import GameState
 import sys
 import time
-import logging
-from .job import Job
+from game_state import GameState
+from job import Job
 from mpi4py import MPI
 if sys.version_info[0] >= 3:
     from functools import reduce
     from queue import PriorityQueue
 else:
     from Queue import PriorityQueue
+import logging
 import imp
 
 game_module = imp.load_source('game_module', sys.argv[1])
+
 PRIMITIVE_REMOTENESS = 0
 WIN, LOSS, TIE, DRAW = "WIN", "LOSS", "TIE", "DRAW"
-
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-size = comm.Get_size()
-
-send = comm.send
-recv = comm.recv
-
-#Check for optimization flag
-for flag in sys.argv:
-    if flag == "-np":
-        recv = comm.Recv
-        send = comm.Send
 
 class Process:
     """
@@ -34,8 +22,6 @@ class Process:
     """
     IS_FINISHED = False
 
-    INITIAL_POS = GameState(game_module.initial_position())
-    ROOT = INITIAL_POS.get_hash()
 
     def dispatch(self, job):
         """
@@ -69,14 +55,13 @@ class Process:
         """
         Main loop for each process
         """
-        # TODO
         while not Process.IS_FINISHED:
             self._log_work(self.work)
-            if self.rank == Process.ROOT and Process.INITIAL_POS.pos in self.resolved:
+            if self.rank == self.root and self.initial_pos.pos in self.resolved:
                 Process.IS_FINISHED = True
                 logging.info('Finished')
-                print (str(self.resolved[Process.INITIAL_POS.pos]) + " in " + str(self.remote[Process.INITIAL_POS.pos]) + " moves")
-                comm.Abort()
+                print (str(self.resolved[self.initial_pos.pos]) + " in " + str(self.remote[self.initial_pos.pos]) + " moves")
+                self.comm.Abort()
             if self.work.empty():
                 self.add_job(Job(Job.CHECK_FOR_UPDATES))
             job = self.work.get()
@@ -85,9 +70,16 @@ class Process:
                 continue
             self.add_job(result)
 
-    def __init__(self, rank, world_size):
+    def __init__(self, rank, world_size, send_method, recv_method, comm):
         self.rank = rank
         self.world_size = world_size
+        self.send = send_method
+        self.recv = recv_method
+        self.comm = comm
+
+        self.initial_pos = GameState(game_module.initial_position())
+        self.root = self.initial_pos.get_hash(self.world_size)
+
         self.work = PriorityQueue()
         self.resolved = {}
         self.remote = {}
@@ -129,7 +121,7 @@ class Process:
         resolved list. Returns the result if this is the case, None
         otherwise.
         """
-        logging.info("Machine " + str(rank) + " looking up " + str(job.game_state.pos))
+        logging.info("Machine " + str(self.rank) + " looking up " + str(job.game_state.pos))
         try:
             res = self.resolved[job.game_state.pos]
             rem = self.remote[job.game_state.pos]
@@ -176,9 +168,9 @@ class Process:
             new_job = Job(Job.LOOK_UP, child, self.rank, self._id)
             logging.info("Machine " + str(self.rank)
                        + " found child " + str(new_job.game_state.pos)
-                       + ", sending to " + str(child.get_hash()))
+                       + ", sending to " + str(child.get_hash(self.world_size)))
 
-            send(new_job,  dest = child.get_hash())
+            self.send(new_job,  dest = child.get_hash(self.world_size))
 
         self._update_id()
 
@@ -190,9 +182,9 @@ class Process:
         Returns None if there is nothing to be recieved.
         """
         # Probe for any sources
-        if comm.iprobe(source=MPI.ANY_SOURCE):
+        if self.comm.iprobe(source=MPI.ANY_SOURCE):
             # If there are sources recieve them.
-            self.received.append(recv(source=MPI.ANY_SOURCE))
+            self.received.append(self.recv(source=MPI.ANY_SOURCE))
             for job in self.received:
                 self.add_job(job)
         del self.received[:]
@@ -202,9 +194,9 @@ class Process:
         Send the job back to the node who asked for the computation
         to be done.
         """
-        logging.info("Machine " + str(rank) + " is sending back " + str(job.game_state.pos) + " to " + str(job.parent))
+        logging.info("Machine " + str(self.rank) + " is sending back " + str(job.game_state.pos) + " to " + str(job.parent))
         resolve_job = Job(Job.RESOLVE, job.game_state, job.parent, job.job_id)
-        send(resolve_job, dest=resolve_job.parent)
+        self.send(resolve_job, dest=resolve_job.parent)
 
     def _res_red(self, res1, res2):
         """

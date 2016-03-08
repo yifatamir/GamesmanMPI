@@ -1,14 +1,11 @@
-from mpi4py import MPI
 import hashlib
-import sys
-import imp
 
 WIN, LOSS, TIE, DRAW = "WIN", "LOSS", "TIE", "DRAW"
 PRIMITIVES = (WIN, LOSS, TIE, DRAW)
 UNKNOWN_REMOTENESS = -1
 
-comm = MPI.COMM_WORLD
-size = comm.Get_size()
+import sys
+import imp
 game_module = imp.load_source('game_module', sys.argv[1])
 
 class GameState:
@@ -22,12 +19,12 @@ class GameState:
         self._state = state           # Useful optional constructor for reduction 
         self._remoteness = remoteness # purposes.
 
-    def get_hash(self):
+    def get_hash(self, world_size):
         """
         Returns the appropriate hash of a given GameState object.
         Based off of the value of it's position.
         """
-        return int(hashlib.md5(str(self.pos).encode('utf-8')).hexdigest(), 16) % size
+        return int(hashlib.md5(str(self.pos).encode('utf-8')).hexdigest(), 16) % world_size
 
     def expand(self):
         """
