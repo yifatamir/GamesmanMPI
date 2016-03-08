@@ -265,6 +265,8 @@ class Process:
                 self.remote[to_resolve.game_state.pos] = self.reduce_helper(self._remote_red, resolve_data).remoteness
                 job.game_state.state = self.resolved[to_resolve.game_state.pos]
                 job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
-            logging.info("Resolved " + str(job.game_state.pos) + " to " + str(job.game_state.state) + ", remoteness: " + str(self.remote[to_resolve.game_state.pos]))
+            logging.info("Resolved " + str(job.game_state.pos) + 
+                         " to " + str(job.game_state.state) +
+                         ", remoteness: " + str(self.remote[to_resolve.game_state.pos]))
             to = Job(Job.SEND_BACK, job.game_state, to_resolve.parent, to_resolve.job_id)
             self.add_job(to)
