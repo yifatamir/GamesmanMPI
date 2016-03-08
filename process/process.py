@@ -19,6 +19,15 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
 
+send = comm.send
+recv = comm.recv
+
+#Check for optimization flag
+for flag in sys.argv:
+    if flag == "-np":
+        recv = comm.Recv
+        send = comm.Send
+
 class Process:
     """
     Class that defines the behavior what each process should do
@@ -169,7 +178,7 @@ class Process:
                        + " found child " + str(new_job.game_state.pos)
                        + ", sending to " + str(child.get_hash()))
 
-            comm.send(new_job,  dest = child.get_hash())
+            send(new_job,  dest = child.get_hash())
 
         self._update_id()
 
@@ -183,7 +192,7 @@ class Process:
         # Probe for any sources
         if comm.iprobe(source=MPI.ANY_SOURCE):
             # If there are sources recieve them.
-            self.received.append(comm.recv(source=MPI.ANY_SOURCE))
+            self.received.append(recv(source=MPI.ANY_SOURCE))
             for job in self.received:
                 self.add_job(job)
         del self.received[:]
@@ -195,7 +204,7 @@ class Process:
         """
         logging.info("Machine " + str(rank) + " is sending back " + str(job.game_state.pos) + " to " + str(job.parent))
         resolve_job = Job(Job.RESOLVE, job.game_state, job.parent, job.job_id)
-        comm.send(resolve_job, dest=resolve_job.parent)
+        send(resolve_job, dest=resolve_job.parent)
 
     def _res_red(self, res1, res2):
         """
