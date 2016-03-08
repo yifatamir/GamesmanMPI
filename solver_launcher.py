@@ -1,13 +1,9 @@
 from mpi4py import MPI
-from src.game_state import GameState
-from src.job import Job
-from src.process import Process
 import inspect
 import logging
 import imp
 import argparse
 import src.utils
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument("game_file", help="game to solve for")
@@ -16,9 +12,20 @@ parser.add_argument("-np", "--numpy", help="optimize for numpy array usage",
 
 args = parser.parse_args()
 
-# Load file.
+comm = MPI.COMM_WORLD
+
+# Load file and give it to each process.
 game_module = imp.load_source('game_module', args.game_file)
 src.utils.game_module = game_module
+
+# Make sure every process has a copy of this.
+comm.Barrier()
+
+# Now it is safe to import the classes we need as everything
+# has now been initialized correctly.
+from src.game_state import GameState
+from src.job import Job
+from src.process import Process
 
 # Make sure the game is properly defined
 assert(hasattr(src.utils.game_module, 'initial_position'))
@@ -29,8 +36,6 @@ assert(inspect.isfunction(src.utils.game_module.initial_position))
 assert(inspect.isfunction(src.utils.game_module.do_move))
 assert(inspect.isfunction(src.utils.game_module.gen_moves))
 assert(inspect.isfunction(src.utils.game_module.primitive))
-
-comm = MPI.COMM_WORLD
 
 # Check for optimizations.
 if args.numpy:

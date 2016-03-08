@@ -10,8 +10,6 @@ else:
 import logging
 from utils import *
 
-PRIMITIVE_REMOTENESS = 0
-
 class Process:
     """
     Class that defines the behavior what each process should do

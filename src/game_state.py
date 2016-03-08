@@ -1,12 +1,5 @@
 import hashlib
-
-WIN, LOSS, TIE, DRAW = "WIN", "LOSS", "TIE", "DRAW"
-PRIMITIVES = (WIN, LOSS, TIE, DRAW)
-UNKNOWN_REMOTENESS = -1
-
-import sys
-import imp
-game_module = imp.load_source('game_module', sys.argv[1])
+from utils import *
 
 class GameState:
     """
