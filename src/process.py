@@ -66,13 +66,12 @@ class Process:
                 continue
             self.add_job(result)
 
-    def __init__(self, rank, world_size, send_method, recv_method, comm, game_module):
+    def __init__(self, rank, world_size, send_method, recv_method, comm):
         self.rank = rank
         self.world_size = world_size
         self.send = send_method
         self.recv = recv_method
         self.comm = comm
-        self.game_module = game_module
 
         self.initial_pos = GameState(GameState.INITIAL_POS)
         self.root = self.initial_pos.get_hash(self.world_size)
