@@ -63,11 +63,11 @@ class Process:
                 continue
             self.add_job(result)
 
-    def __init__(self, rank, world_size, comm):
+    def __init__(self, rank, world_size, comm, send, recv):
         self.rank = rank
         self.world_size = world_size
-        self.send = comm.send # send and recv redeclarations for brevity.
-        self.recv = comm.recv
+        self.send = send # send and recv redeclarations for brevity.
+        self.recv = recv
         self.comm = comm
 
         self.initial_pos = GameState(GameState.INITIAL_POS)
