@@ -1,15 +1,5 @@
-from mpi4py import MPI
 import hashlib
-import sys
-import imp
-
-WIN, LOSS, TIE, DRAW = "WIN", "LOSS", "TIE", "DRAW"
-PRIMITIVES = (WIN, LOSS, TIE, DRAW)
-UNKNOWN_REMOTENESS = -1
-
-comm = MPI.COMM_WORLD
-size = comm.Get_size()
-game_module = imp.load_source('game_module', sys.argv[1])
+from .utils import *
 
 class GameState:
     """
@@ -17,17 +7,20 @@ class GameState:
     by the user, just makes things easier for the
     framework.
     """
+
+    INITIAL_POS = game_module.initial_position()
+
     def __init__(self, pos, remoteness=None, state=None):
         self.pos = pos
-        self._state = state           # Useful optional constructor for reduction 
+        self._state = state           # Useful optional constructor for reduction
         self._remoteness = remoteness # purposes.
 
-    def get_hash(self):
+    def get_hash(self, world_size):
         """
         Returns the appropriate hash of a given GameState object.
         Based off of the value of it's position.
         """
-        return int(hashlib.md5(str(self.pos).encode('utf-8')).hexdigest(), 16) % size
+        return int(hashlib.md5(str(self.pos).encode('utf-8')).hexdigest(), 16) % world_size
 
     def expand(self):
         """
@@ -76,6 +69,12 @@ class GameState:
         Determines the difference between
         WLTD and UNDECIDED
         """
-        # TODO: Don't violate abstraction barrier...
-        # Notably: ("WIN", "LOSS", "TIE", "DRAW")
         return self.state in PRIMITIVES
+
+    @property
+    def primitive(self):
+        """
+        Determines what kind of primitive a
+        variable is: WLTD?
+        """
+        return game_module.primitive(self.pos)

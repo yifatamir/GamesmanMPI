@@ -4,24 +4,15 @@ class Job:
     jobs in a queue for the processes to work on.
     """
     # A list of possible job types.
-    LOOK_UP           = "lookup"
-    DISTRIBUTE        = "distribute"
-    CHECK_FOR_UPDATES = "check_for_updates"
-    SEND_BACK         = "send_back"
-    FINISHED          = "finished"
-    RESOLVE           = "resolve"
-
-    _priority_table = {
-            FINISHED          : 0,
-            LOOK_UP           : 1,
-            RESOLVE           : 2,
-            SEND_BACK         : 3,
-            DISTRIBUTE        : 4,
-            CHECK_FOR_UPDATES : 5
-    }
+    FINISHED          = 0
+    LOOK_UP           = 1
+    RESOLVE           = 2
+    SEND_BACK         = 3
+    DISTRIBUTE        = 4
+    CHECK_FOR_UPDATES = 5
 
     def _assign_priority(self):
-        self.priority = self._priority_table[self.job_type]
+        self.priority = self.job_type
 
     def __init__(self, job_type, game_state=None, parent=None, job_id=None):
         self.job_type   = job_type

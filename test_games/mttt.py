@@ -1,4 +1,4 @@
-WIN, LOSS, TIE, DRAW, UNDECIDED = "WIN", "LOSS", "TIE", "DRAW", "UNDECIDED"
+import src.utils
 
 WIDTH = 3
 HEIGHT = 3
@@ -9,7 +9,7 @@ O = 'O'
 BLANK = '_'
 
 def initial_position():
-    return BLANK * 9
+    return BLANK * WIDTH * HEIGHT
 
 def toLoc(i):
     x = i % WIDTH
@@ -80,11 +80,11 @@ def primitive(pos):
              getPiece(pos, x + 2, y + 2) == piece) or
             (getPiece(pos, x - 1, y + 1) == piece and
              getPiece(pos, x - 2, y + 2) == piece)):
-            return LOSS
+            return src.utils.LOSS
     if BLANK in pos:
-        return UNDECIDED
+        return src.utils.UNDECIDED
     else:
-        return TIE
+        return src.utils.TIE
 
 def gen_moves(pos):
     '''
