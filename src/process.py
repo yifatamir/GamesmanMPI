@@ -63,13 +63,18 @@ class Process:
                 continue
             self.add_job(result)
 
-    def __init__(self, rank, world_size, comm, send, recv):
+    def __init__(self, rank, world_size, comm, NP=False):
         self.rank = rank
         self.world_size = world_size
-        self.send = send # send and recv redeclarations for brevity.
-        self.recv = recv
         self.comm = comm
+        self.NP = NP
 
+        if self.NP:
+            self.send = self.comm.Send # send and recv redeclarations for brevity.
+            self.recv = self.comm.Recv
+        else:
+            self.send = self.comm.send
+            self.recv = self.comm.recv
         self.initial_pos = GameState(GameState.INITIAL_POS)
         self.root = self.initial_pos.get_hash(self.world_size)
 
@@ -163,7 +168,7 @@ class Process:
                        + " found child " + str(new_job.game_state.pos)
                        + ", sending to " + str(child.get_hash(self.world_size)))
 
-            self.send(new_job,  dest = child.get_hash(self.world_size))
+            self.send(new_job, dest = child.get_hash(self.world_size))
 
         self._update_id()
 
