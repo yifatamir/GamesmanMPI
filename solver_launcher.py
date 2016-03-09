@@ -37,17 +37,13 @@ assert(inspect.isfunction(src.utils.game_module.do_move))
 assert(inspect.isfunction(src.utils.game_module.gen_moves))
 assert(inspect.isfunction(src.utils.game_module.primitive))
 
-# Check for optimizations.
-if args.numpy:
-    comm.send = comm.Send
-    comm.recv = comm.Recv
 
 # Set up our logging system
 logging.basicConfig(filename='logs/solver_log' + str(comm.Get_rank()) + '.log', filemode='w', level=logging.WARNING)
 
 initial_position = src.utils.game_module.initial_position()
 
-process = Process(comm.Get_rank(), comm.Get_size(), comm)
+process = Process(comm.Get_rank(), comm.Get_size(), comm, NP=args.numpy)
 if process.rank == process.root:
     initial_gamestate = GameState(GameState.INITIAL_POS)
     initial_job = Job(Job.LOOK_UP, initial_gamestate, process.rank, 0) # Defaults at zero, TODO: Fix abstraction violation.
