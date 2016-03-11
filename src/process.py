@@ -200,25 +200,14 @@ class Process:
         """
         Private method that helps reduce in resolve.
         """
-        nums = {LOSS : 0, DRAW : 1, TIE : 2, WIN : 3, None : 4}
+        nums = {LOSS : 0, DRAW : 1, TIE : 2, WIN : 3}
         states = {0 : LOSS, 1 : DRAW, 2 : TIE, 3 : WIN}
         negated = {LOSS : WIN, WIN : LOSS, DRAW : DRAW, TIE : TIE}
 
-        max_num = max(nums[res1.state], nums[res2.state])
-
-        if max_num == 4:
-            return negated[res1.state]
+        if res2 == None:
+            return negated[res1]
+        max_num = max(nums[res1], nums[res2])
         return negated[states[max_num]]
-
-        # original code:
-        # if res1.state == LOSS and res2.state == LOSS:
-        #     return WIN
-        # elif res1.state == WIN or res2.state == WIN:
-        #     return LOSS
-        # elif res1.state == TIE or res2.state == TIE:
-        #     return TIE
-        # elif res1.state == DRAW or res2.state == DRAW:
-        #     return DRAW
 
     def _remote_red(self, rem1, rem2):
         """
