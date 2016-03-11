@@ -200,28 +200,16 @@ class Process:
         """
         Private method that helps reduce in resolve.
         """
-        # Probably can be done in a "cleaner" way.
-        if res2 is None:
-            if res1.state == WIN:
-                return LOSS
-            elif res1.state == LOSS:
-                return WIN
-            else:
-                return res1.state
+        nums = {LOSS : 0, DRAW : 1, TIE : 2, WIN : 3, None : 4}
+        states = {0 : LOSS, 1 : DRAW, 2 : TIE, 3 : WIN}
+        negated = {LOSS : WIN, WIN : LOSS, DRAW : DRAW, TIE : TIE}
 
-        states = {WIN: 0, LOSS : 1, TIE: 2, DRAW: 3}
-        state1 = states[res1.state]
-        state2 = states[res2.state]
+        max_num = max(nums[res1.state], nums[res2.state])
 
-        if (state1*state2 == 0): #at least one of them is a WIN
-            return LOSS
-        if (state1*state2 == 1): #both of them are LOSSes
-            return WIN
-        if ((state1*state2) % 2 == 0): #at least one of them is a TIE
-            return TIE
-        # if ((state1*state2) % 3 == 0):
-        else:
-            return DRAW
+        if max_num == 4:
+            return negated[res1.state]
+        return negated[states[max_num]]
+
         # original code:
         # if res1.state == LOSS and res2.state == LOSS:
         #     return WIN
