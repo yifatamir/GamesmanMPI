@@ -96,9 +96,6 @@ class Process:
                                   # remaining.
         self._pending = {}        # job_id -> [ Job, GameStates, ... ]
                                   # Resolved.
-        # Main process will terminate everyone by bcasting the value of
-        # finished to True.
-        self.finished = False
 
     def add_job(self, job):
         """
