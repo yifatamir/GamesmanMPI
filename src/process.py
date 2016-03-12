@@ -198,7 +198,7 @@ class Process:
         Private method that helps reduce in resolve.
         """
         nums = {LOSS : 0, DRAW : 1, TIE : 2, WIN : 3}
-        states = {0 : LOSS, 1 : DRAW, 2 : TIE, 3 : WIN}
+        states = (LOSS, DRAW, TIE, WIN)
         negated = {LOSS : WIN, WIN : LOSS, DRAW : DRAW, TIE : TIE}
 
         if res2 == None:
@@ -216,7 +216,7 @@ class Process:
             return GameState(None, rem1.remoteness + 1, rem1.state)
 
         if rem1.state == WIN and rem2.state == WIN:
-            return GameState(None, max(rem1.remoteness, rem2.remoteness) + 1, rem1.state)
+            return GameState(None, min(rem1.remoteness, rem2.remoteness) + 1, rem1.state)
         elif rem2.state == WIN:
             return GameState(None, rem1.remoteness + 1, rem2.state)
         elif rem1.state == WIN:
