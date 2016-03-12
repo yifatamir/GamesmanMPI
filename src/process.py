@@ -67,9 +67,8 @@ class Process:
         self.rank = rank
         self.world_size = world_size
         self.comm = comm
-        self.NP = NP
 
-        if self.NP:
+        if NP:
             self.send = self.comm.Send # send and recv redeclarations for brevity.
             self.recv = self.comm.Recv
         else:
