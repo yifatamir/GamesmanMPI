@@ -53,7 +53,7 @@ class Process:
             if self.rank == self.root and self.initial_pos.pos in self.resolved:
                 Process.IS_FINISHED = True
                 logging.info('Finished')
-                print (str(self.resolved[self.initial_pos.pos]) + " in " + str(self.remote[self.initial_pos.pos]) + " moves")
+                print (to_str(self.resolved[self.initial_pos.pos]) + " in " + str(self.remote[self.initial_pos.pos]) + " moves")
                 self.comm.Abort()
             if self.work.empty():
                 self.add_job(Job(Job.CHECK_FOR_UPDATES))
@@ -199,12 +199,11 @@ class Process:
         """
         nums = {LOSS : 0, DRAW : 1, TIE : 2, WIN : 3}
         states = (LOSS, DRAW, TIE, WIN)
-        negated = {LOSS : WIN, WIN : LOSS, DRAW : DRAW, TIE : TIE}
 
         if res2 == None:
-            return negated[res1]
+            return negate(res1)
         max_num = max(nums[res1], nums[res2])
-        return negated[states[max_num]]
+        return negate(states[max_num])
 
     def _remote_red(self, rem1, rem2):
         """
