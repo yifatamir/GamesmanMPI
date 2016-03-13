@@ -210,18 +210,17 @@ class Process:
         Takes in two GameStates, and returns a Job with
         with an appropriate remoteness.
         """
+        # TODO: Make cleaner.
         if rem2 is None:
-            return GameState(None, rem1.remoteness + 1, rem1.state)
+            return GameState(None, rem1.remoteness, rem1.state)
 
-        if rem1.state == WIN and rem2.state == WIN:
-            return GameState(None, min(rem1.remoteness, rem2.remoteness) + 1, rem1.state)
-        elif rem2.state == WIN:
-            return GameState(None, rem1.remoteness + 1, rem2.state)
-        elif rem1.state == WIN:
-            return GameState(None, rem2.remoteness + 1, rem1.state)
+        if rem1.state == WIN or rem2.state == WIN:
+            return GameState(None, max(rem1.remoteness, rem2.remoteness), WIN)
+        elif rem2.state == LOSS and rem1.state == LOSS:
+            return GameState(None, min(rem1.remoteness, rem2.remoteness), LOSS)
         else:
             # Use rem1.state by default, but rem2.state should work too.
-            return GameState(None, min(rem1.remoteness, rem2.remoteness) + 1, rem1.state)
+            return GameState(None, min(rem1.remoteness, rem2.remoteness), rem1.state)
 
     def reduce_helper(self, function, data):
         if len(data) == 1:
@@ -253,7 +252,7 @@ class Process:
                 state_red = [gs.state for gs in resolve_data]
                 #remoteness_red = [gs.remoteness for gs in resolve_data]
                 self.resolved[to_resolve.game_state.pos] = self.reduce_helper(self._res_red, state_red)
-                self.remote[to_resolve.game_state.pos] = self.reduce_helper(self._remote_red, resolve_data).remoteness
+                self.remote[to_resolve.game_state.pos] = self.reduce_helper(self._remote_red, resolve_data).remoteness + 1
                 job.game_state.state = self.resolved[to_resolve.game_state.pos]
                 job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
             logging.info("Resolved " + str(job.game_state.pos) +
