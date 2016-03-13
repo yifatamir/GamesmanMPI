@@ -220,7 +220,7 @@ class Process:
             return GameState(None, min(rem1.remoteness, rem2.remoteness), LOSS)
         else:
             # Use rem1.state by default, but rem2.state should work too.
-            return GameState(None, min(rem1.remoteness, rem2.remoteness), rem1.state)
+            return GameState(None, max(rem1.remoteness, rem2.remoteness), rem1.state)
 
     def reduce_helper(self, function, data):
         if len(data) == 1:
