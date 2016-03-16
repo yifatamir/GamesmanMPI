@@ -52,6 +52,13 @@ class Process:
             self._log_work(self.work)
             if self.rank == self.root and self.initial_pos.pos in self.resolved:
                 Process.IS_FINISHED = True
+                for group in reversed(self.comm_list):
+                    if group.Get_rank() == 0:
+                        while len() < group.Get_size():
+                            datum = self.recv()
+                            self.stats.append(datum)
+                    else:
+                        self.send(0, self.stats)
                 logging.info('Finished')
                 print (to_str(self.resolved[self.initial_pos.pos]) + " in " + str(self.remote[self.initial_pos.pos]) + " moves")
                 self.comm.Abort()
@@ -68,6 +75,8 @@ class Process:
         self.world_size = world_size
         self.comm = comm
         self.comm_list = comm_list
+        self.sent_red = False
+        self.stats = []
 
         if NP:
             self.send = self.comm.Send # send and recv redeclarations for brevity.
