@@ -63,10 +63,11 @@ class Process:
                 continue
             self.add_job(result)
 
-    def __init__(self, rank, world_size, comm, NP=False):
+    def __init__(self, rank, world_size, comm, NP=False, comm_list):
         self.rank = rank
         self.world_size = world_size
         self.comm = comm
+        self.comm_list = comm_list
 
         if NP:
             self.send = self.comm.Send # send and recv redeclarations for brevity.
