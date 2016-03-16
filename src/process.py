@@ -53,7 +53,7 @@ class Process:
             if self.rank == self.root and self.initial_pos.pos in self.resolved:
                 Process.IS_FINISHED = True
                 logging.info('Finished')
-                print (str(self.resolved[self.initial_pos.pos]) + " in " + str(self.remote[self.initial_pos.pos]) + " moves")
+                print (to_str(self.resolved[self.initial_pos.pos]) + " in " + str(self.remote[self.initial_pos.pos]) + " moves")
                 self.comm.Abort()
             if self.work.empty():
                 self.add_job(Job(Job.CHECK_FOR_UPDATES))
@@ -67,9 +67,8 @@ class Process:
         self.rank = rank
         self.world_size = world_size
         self.comm = comm
-        self.NP = NP
 
-        if self.NP:
+        if NP:
             self.send = self.comm.Send # send and recv redeclarations for brevity.
             self.recv = self.comm.Recv
         else:
@@ -198,13 +197,12 @@ class Process:
         Private method that helps reduce in resolve.
         """
         nums = {LOSS : 0, DRAW : 1, TIE : 2, WIN : 3}
-        states = {0 : LOSS, 1 : DRAW, 2 : TIE, 3 : WIN}
-        negated = {LOSS : WIN, WIN : LOSS, DRAW : DRAW, TIE : TIE}
+        states = (LOSS, DRAW, TIE, WIN)
 
         if res2 == None:
-            return negated[res1]
+            return negate(res1)
         max_num = max(nums[res1], nums[res2])
-        return negated[states[max_num]]
+        return negate(states[max_num])
 
     def _remote_red(self, rem1, rem2):
         """
@@ -212,18 +210,17 @@ class Process:
         Takes in two GameStates, and returns a Job with
         with an appropriate remoteness.
         """
+        # TODO: Make cleaner.
         if rem2 is None:
-            return GameState(None, rem1.remoteness + 1, rem1.state)
+            return GameState(None, rem1.remoteness, rem1.state)
 
-        if rem1.state == WIN and rem2.state == WIN:
-            return GameState(None, max(rem1.remoteness, rem2.remoteness) + 1, rem1.state)
-        elif rem2.state == WIN:
-            return GameState(None, rem1.remoteness + 1, rem2.state)
-        elif rem1.state == WIN:
-            return GameState(None, rem2.remoteness + 1, rem1.state)
+        if rem1.state == WIN or rem2.state == WIN:
+            return GameState(None, max(rem1.remoteness, rem2.remoteness), WIN)
+        elif rem2.state == LOSS and rem1.state == LOSS:
+            return GameState(None, min(rem1.remoteness, rem2.remoteness), LOSS)
         else:
             # Use rem1.state by default, but rem2.state should work too.
-            return GameState(None, min(rem1.remoteness, rem2.remoteness) + 1, rem1.state)
+            return GameState(None, max(rem1.remoteness, rem2.remoteness), rem1.state)
 
     def reduce_helper(self, function, data):
         if len(data) == 1:
@@ -255,7 +252,7 @@ class Process:
                 state_red = [gs.state for gs in resolve_data]
                 #remoteness_red = [gs.remoteness for gs in resolve_data]
                 self.resolved[to_resolve.game_state.pos] = self.reduce_helper(self._res_red, state_red)
-                self.remote[to_resolve.game_state.pos] = self.reduce_helper(self._remote_red, resolve_data).remoteness
+                self.remote[to_resolve.game_state.pos] = self.reduce_helper(self._remote_red, resolve_data).remoteness + 1
                 job.game_state.state = self.resolved[to_resolve.game_state.pos]
                 job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
             logging.info("Resolved " + str(job.game_state.pos) +
