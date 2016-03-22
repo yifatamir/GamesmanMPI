@@ -10,6 +10,9 @@ parser.add_argument("game_file", help="game to solve for")
 parser.add_argument("-np", "--numpy", help="optimize for numpy array usage",
                                action="store_true")
 
+parser.add_argument("--debug", help="Enables or disables logging",
+                               action="store_true")
+
 args = parser.parse_args()
 
 comm = MPI.COMM_WORLD
@@ -41,7 +44,11 @@ def validate(mod):
 validate(src.utils.game_module)
 
 # Set up our logging system
-logging.basicConfig(filename='logs/solver_log' + str(comm.Get_rank()) + '.log', filemode='w', level=logging.WARNING)
+lvl = logging.CRITICAL
+if args.debug:
+    lvl = logging.DEBUG
+
+logging.basicConfig(filename='logs/solver_log' + str(comm.Get_rank()) + '.log', filemode='w', level=lvl)
 
 initial_position = src.utils.game_module.initial_position()
 
