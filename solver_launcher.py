@@ -27,16 +27,18 @@ from src.game_state import GameState
 from src.job import Job
 from src.process import Process
 
-# Make sure the game is properly defined
-assert(hasattr(src.utils.game_module, 'initial_position'))
-assert(hasattr(src.utils.game_module, 'do_move'))
-assert(hasattr(src.utils.game_module, 'gen_moves'))
-assert(hasattr(src.utils.game_module, 'primitive'))
-assert(inspect.isfunction(src.utils.game_module.initial_position))
-assert(inspect.isfunction(src.utils.game_module.do_move))
-assert(inspect.isfunction(src.utils.game_module.gen_moves))
-assert(inspect.isfunction(src.utils.game_module.primitive))
+def validate(mod):
+    try:
+        getattr(mod, 'initial_position')
+        getattr(mod, 'do_move')
+        getattr(mod, 'gen_moves')
+        getattr(mod, 'primitive')
+    except AttributeError as e:
+        print "Could not find method", e.args[0]
+        raise
 
+# Make sure the game is properly defined
+validate(src.utils.game_module)
 
 # Set up our logging system
 logging.basicConfig(filename='logs/solver_log' + str(comm.Get_rank()) + '.log', filemode='w', level=logging.WARNING)
