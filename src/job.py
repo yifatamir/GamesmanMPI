@@ -12,6 +12,9 @@ class Job:
     STATS             = 5
     CHECK_FOR_UPDATES = 6
 
+    # Special number associated with the initial job id.
+    INITIAL_JOB_ID = 0
+
     def _assign_priority(self):
         self.priority = self.job_type
 
