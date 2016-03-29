@@ -54,7 +54,7 @@ class Process:
                 Process.IS_FINISHED = True
                 for group in reversed(self.comm_list):
                     if group.Get_rank() == 0:
-                        while len() < group.Get_size():
+                        while len(self.stats) < group.Get_size():
                             datum = self.recv()
                             self.stats.append(datum)
                     else:
@@ -70,7 +70,7 @@ class Process:
                 continue
             self.add_job(result)
 
-    def __init__(self, rank, world_size, comm, NP=False, comm_list):
+    def __init__(self, rank, world_size, comm, comm_list, NP=False):
         self.rank = rank
         self.world_size = world_size
         self.comm = comm

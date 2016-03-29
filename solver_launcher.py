@@ -51,7 +51,7 @@ logging.basicConfig(filename='logs/solver_log' + str(comm.Get_rank()) + '.log', 
 
 initial_position = src.utils.game_module.initial_position()
 
-process = Process(comm.Get_rank(), comm.Get_size(), comm, NP=args.numpy, comm_list)
+process = Process(comm.Get_rank(), comm.Get_size(), comm, comm_list, NP=args.numpy)
 if process.rank == process.root:
     initial_gamestate = GameState(GameState.INITIAL_POS)
     initial_job = Job(Job.LOOK_UP, initial_gamestate, process.rank, 0) # Defaults at zero, TODO: Fix abstraction violation.
