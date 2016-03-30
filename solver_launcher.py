@@ -24,14 +24,6 @@ src.utils.game_module = game_module
 # Make sure every process has a copy of this.
 comm.Barrier()
 
-comm_list = []
-comm_list.append(comm)
-while comm.Get_size() > 2:
-    color = comm.Get_rank() / 2
-    comm = comm.Split(color)
-    comm_list.append(comm)
-comm = MPI.COMM_WORLD
-
 # Now it is safe to import the classes we need as everything
 # has now been initialized correctly.
 from src.game_state import GameState
@@ -60,7 +52,7 @@ logging.basicConfig(filename='logs/solver_log' + str(comm.Get_rank()) + '.log', 
 
 initial_position = src.utils.game_module.initial_position()
 
-process = Process(comm.Get_rank(), comm.Get_size(), comm, comm_list, NP=args.numpy)
+process = Process(comm.Get_rank(), comm.Get_size(), comm, NP=args.numpy)
 if process.rank == process.root:
     initial_gamestate = GameState(GameState.INITIAL_POS)
     initial_job = Job(Job.LOOK_UP, initial_gamestate, process.rank, Job.INITIAL_JOB_ID)
