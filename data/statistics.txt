@@ -1,0 +1,1 @@
+[(0, {'num_lookups': 2, 'resolve_data': {2: 1}}), (1, {'num_lookups': 7, 'resolve_data': {0: 1, 1: 0, 3: 1}}), (2, {'num_lookups': 1, 'resolve_data': {4: 0}})]
