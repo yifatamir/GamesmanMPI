@@ -56,7 +56,7 @@ class Process:
                 Process.IS_FINISHED = True
                 logging.info('Finished')
                 print (to_str(self.resolved[self.initial_pos.pos]) + " in " + str(self.remote[self.initial_pos.pos]) + " moves")
-                statistics = []
+                statistics = []         # We store stats_dict from each node in the statistics list.
                 for rank in range(self.world_size):
                     if rank == self.rank:
                         stat = self.stats_dict
@@ -64,7 +64,8 @@ class Process:
                         send_req = self.send(Job(Job.STATS), dest = rank)
                         stat = self.recv(source = rank)
                     statistics.append( (rank, stat) )
-                print statistics
+                with open('data/statistics.txt', 'w+') as f:
+                    f.write(str(statistics))
                 self.comm.Abort()
             if self.work.empty():
                 self.add_job(Job(Job.CHECK_FOR_UPDATES))
@@ -280,3 +281,4 @@ class Process:
                          ", remoteness: " + str(self.remote[to_resolve.game_state.pos]))
             to = Job(Job.SEND_BACK, job.game_state, to_resolve.parent, to_resolve.job_id)
             self.add_job(to)
+        self.stats_dict["resolve_data"] = self.resolved
