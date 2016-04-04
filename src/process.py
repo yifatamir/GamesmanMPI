@@ -168,12 +168,6 @@ class Process:
 
         self._update_id()
 
-    def stats(self, job):
-        """
-        Returns stats for this Process to the root Process.
-        """
-        self.send(self.stats_dict, dest = self.root)
-
     def check_for_updates(self, job):
         """
         Checks if there is new data from other Processes that needs to
