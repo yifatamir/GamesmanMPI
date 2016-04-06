@@ -37,7 +37,7 @@ class Process:
         For debugging purposes.
         Prints the job type for each job in the job queue.
         """
-        return ', '.join([str(j.job_type_to_name()) + " " + str(j.game_state.pos) for j in q.queue])
+        return ', '.join([JOB_TYPE_MAP[j.job_type] + " " + str(j.game_state.pos) for j in q.queue])
 
     def _log_work(self, work):
         check_for_updates = 'check_for_updates, check_for_updates'
@@ -196,8 +196,8 @@ class Process:
         """
         Private method that helps reduce in resolve.
         """
-        nums = {LOSS : 0, DRAW : 1, TIE : 2, WIN : 3}
-        states = (LOSS, DRAW, TIE, WIN)
+        nums = {WIN : 0, DRAW : 1, TIE : 2, LOSS : 3}
+        states = (WIN, DRAW, TIE, LOSS)
 
         if res2 == None:
             return negate(res1)
@@ -247,8 +247,7 @@ class Process:
                 if __debug__:
                     res_str = "Resolve data:"
                     for state in resolve_data:
-                        res_str = res_str + " " + str(state.pos) + "/" + str(state.state) + "/" + str(state.remoteness)
-                    # print(res_str) #YA
+                        res_str = res_str + " " + str(state.pos) + "/" + STATE_MAP[state.state] + "/" + str(state.remoteness)
                     logging.info(res_str)
                 state_red = [gs.state for gs in resolve_data]
                 #remoteness_red = [gs.remoteness for gs in resolve_data]
@@ -257,7 +256,7 @@ class Process:
                 job.game_state.state = self.resolved[to_resolve.game_state.pos]
                 job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
             logging.info("Resolved " + str(job.game_state.pos) +
-                         " to " + str(job.game_state.state) +
+                         " to " + STATE_MAP[job.game_state.state] +
                          ", remoteness: " + str(self.remote[to_resolve.game_state.pos]))
             to = Job(Job.SEND_BACK, job.game_state, to_resolve.parent, to_resolve.job_id)
             self.add_job(to)
