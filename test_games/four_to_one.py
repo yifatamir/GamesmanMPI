@@ -5,7 +5,7 @@
 import src.utils
 
 def initial_position():
-    return 4
+    return 3
 
 def gen_moves(x):
     if x == 1:

@@ -30,4 +30,7 @@ class Job:
         they have.
         """
         return self.priority < other.priority
->>>>>>> upstream/master
+
+    def job_type_to_name(self):
+        names = {0: "FINISHED", 1: "LOOK_UP", 2: "RESOLVE", 3: "SEND_BACK", 4: "DISTRIBUTE", 5: "CHECK_FOR_UPDATES"}
+        return names[self.job_type]

@@ -37,7 +37,7 @@ class Process:
         For debugging purposes.
         Prints the job type for each job in the job queue.
         """
-        return ', '.join([str(j.job_type) + " " + str(j.game_state.pos) for j in q.queue])
+        return ', '.join([str(j.job_type_to_name()) + " " + str(j.game_state.pos) for j in q.queue])
 
     def _log_work(self, work):
         check_for_updates = 'check_for_updates, check_for_updates'
@@ -248,6 +248,7 @@ class Process:
                     res_str = "Resolve data:"
                     for state in resolve_data:
                         res_str = res_str + " " + str(state.pos) + "/" + str(state.state) + "/" + str(state.remoteness)
+                    # print(res_str) #YA
                     logging.info(res_str)
                 state_red = [gs.state for gs in resolve_data]
                 #remoteness_red = [gs.remoteness for gs in resolve_data]
