@@ -1,5 +1,6 @@
 tests/solve_results.txt
 tests/time_results.txt
+data/statistics.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
