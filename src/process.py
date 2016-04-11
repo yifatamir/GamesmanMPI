@@ -28,6 +28,7 @@ class Process:
             self.resolve,
             self.send_back,
             self.distribute,
+            self.stats,
             self.check_for_updates
         )
         return _dispatch_table[job.job_type](job)
@@ -37,12 +38,12 @@ class Process:
         For debugging purposes.
         Prints the job type for each job in the job queue.
         """
-        return ', '.join([JOB_TYPE_MAP[j.job_type] + " " + str(j.game_state.pos) for j in q.queue])
+        return ' '
+        # return ', '.join([JOB_TYPE_MAP[j.job_type] + " " + str(j.game_state.pos) for j in q.queue])
 
     def _log_work(self, work):
         check_for_updates = 'check_for_updates, check_for_updates'
         logging.info("Machine " + str(self.rank) + " has " + self._queue_to_str(self.work) + " lined up to work on")
-
 
     def run(self):
         """
@@ -54,6 +55,16 @@ class Process:
                 Process.IS_FINISHED = True
                 logging.info('Finished')
                 print (to_str(self.resolved[self.initial_pos.pos]) + " in " + str(self.remote[self.initial_pos.pos]) + " moves")
+                statistics = []         # We store stats_dict from each node in the statistics list.
+                for rank in range(self.world_size):
+                    if rank == self.rank:
+                        stat = self.stats_dict
+                    else: 
+                        send_req = self.send(Job(Job.STATS), dest = rank)
+                        stat = self.recv(source = rank)
+                    statistics.append( (rank, stat) )
+                with open('data/statistics.txt', 'w+') as f:
+                    f.write(str(statistics))
                 self.comm.Abort()
             if self.work.empty():
                 self.add_job(Job(Job.CHECK_FOR_UPDATES))
@@ -95,6 +106,8 @@ class Process:
                                   # remaining.
         self._pending = {}        # job_id -> [ Job, GameStates, ... ]
                                   # Resolved.
+        self.stats_dict = {}            # Dictionary continue statistics for process.
+        self.stats_dict["num_lookups"] = 0
 
     def add_job(self, job):
         """
@@ -116,6 +129,7 @@ class Process:
         otherwise.
         """
         logging.info("Machine " + str(self.rank) + " looking up " + str(job.game_state.pos))
+        self.stats_dict["num_lookups"] += 1
         try:
             res = self.resolved[job.game_state.pos]
             rem = self.remote[job.game_state.pos]
@@ -168,6 +182,12 @@ class Process:
 
         self._update_id()
 
+    def stats(self, job):
+        """
+        Returns stats for this Process to the root Process.
+        """
+        self.send(self.stats_dict, dest = self.root)
+
     def check_for_updates(self, job):
         """
         Checks if there is new data from other Processes that needs to
@@ -214,10 +234,15 @@ class Process:
         if rem2 is None:
             return GameState(None, rem1.remoteness, rem1.state)
 
-        if rem1.state == WIN or rem2.state == WIN:
+        if rem1.state == LOSS or rem2.state == LOSS:
+            if rem1.state == LOSS and rem2.state == WIN:
+                return GameState(None, rem1.remoteness, LOSS)
+            elif rem1.state == WIN and rem2.state == LOSS:
+                return GameState(None, rem2.remoteness, LOSS)
+            else:
+                return GameState(None, min(rem1.remoteness, rem2.remoteness), LOSS)
+        elif rem2.state == WIN and rem1.state == WIN:
             return GameState(None, max(rem1.remoteness, rem2.remoteness), WIN)
-        elif rem2.state == LOSS and rem1.state == LOSS:
-            return GameState(None, min(rem1.remoteness, rem2.remoteness), LOSS)
         else:
             # Use rem1.state by default, but rem2.state should work too.
             return GameState(None, max(rem1.remoteness, rem2.remoteness), rem1.state)
@@ -247,7 +272,7 @@ class Process:
                 if __debug__:
                     res_str = "Resolve data:"
                     for state in resolve_data:
-                        res_str = res_str + " " + str(state.pos) + "/" + STATE_MAP[state.state] + "/" + str(state.remoteness)
+                        res_str = res_str + " " + str(state.pos) + "/" + str(state.state) + "/" + str(state.remoteness)
                     logging.info(res_str)
                 state_red = [gs.state for gs in resolve_data]
                 #remoteness_red = [gs.remoteness for gs in resolve_data]
@@ -256,7 +281,8 @@ class Process:
                 job.game_state.state = self.resolved[to_resolve.game_state.pos]
                 job.game_state.remoteness = self.remote[to_resolve.game_state.pos]
             logging.info("Resolved " + str(job.game_state.pos) +
-                         " to " + STATE_MAP[job.game_state.state] +
+                         " to " + str(job.game_state.state) +
                          ", remoteness: " + str(self.remote[to_resolve.game_state.pos]))
             to = Job(Job.SEND_BACK, job.game_state, to_resolve.parent, to_resolve.job_id)
             self.add_job(to)
+        self.stats_dict["resolve_data"] = self.resolved
