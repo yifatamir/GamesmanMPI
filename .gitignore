@@ -2,9 +2,6 @@ tests/solve_results.txt
 tests/time_results.txt
 data/statistics.txt
 
-rank/*
-!rank/README.md
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
