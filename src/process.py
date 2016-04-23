@@ -92,8 +92,9 @@ class Process:
         self.root = self.initial_pos.get_hash(self.world_size)
 
         self.work = PriorityQueue()
-        self.resolved = Shove()
-        self.remote = Shove()
+        folder_path = 'file://rank/' + str(self.rank)
+        self.resolved = Shove(folder_path + 'results')
+        self.remote = Shove(folder_path + 'remote')
         # As for recieving, should test them when appropriate
         # in the run loop.
         self.received = []
@@ -104,12 +105,12 @@ class Process:
         # with length 2. Then once all the results have been received
         # you can compare the length, and then reduce the results.
         # solving this particular distributed task.
-        self._id = 0              # Job id tracker.
-        self._counter = {}        # A job_id -> Number of results
-                                  # remaining.
-        self._pending = {}        # job_id -> [ Job, GameStates, ... ]
-                                  # Resolved.
-        self.stats_dict = Shove() # Dictionary continue statistics for process.
+        self._id = 0                                   # Job id tracker.
+        self._counter = {}                             # A job_id -> Number of results
+                                                       # remaining.
+        self._pending = {}                             # job_id -> [ Job, GameStates, ... ]
+                                                       # Resolved.
+        self.stats_dict = Shove(folder_path + 'stats') # Statistics for process.
         self.stats_dict["num_lookups"] = 0
 
     def add_job(self, job):
