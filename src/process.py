@@ -92,7 +92,7 @@ class Process:
         self.root = self.initial_pos.get_hash(self.world_size)
 
         self.work = PriorityQueue()
-        folder_path = 'file://rank/' + str(self.rank)
+        folder_path = 'file://stats/' + str(self.rank) + '/'
         self.resolved = Shove(folder_path + 'results')
         self.remote = Shove(folder_path + 'remote')
         # As for recieving, should test them when appropriate
