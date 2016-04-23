@@ -31,7 +31,6 @@ class Process:
             self.resolve,
             self.send_back,
             self.distribute,
-            self.stats,
             self.check_for_updates
         )
         return _dispatch_table[job.job_type](job)
@@ -57,17 +56,9 @@ class Process:
             if self.rank == self.root and self.initial_pos.pos in self.resolved:
                 Process.IS_FINISHED = True
                 logging.info('Finished')
-                print (to_str(self.resolved[self.initial_pos.pos]) + " in " + str(self.remote[self.initial_pos.pos]) + " moves")
-                statistics = []         # We store stats_dict from each node in the statistics list.
-                for rank in range(self.world_size):
-                    if rank == self.rank:
-                        stat = self.stats_dict
-                    else: 
-                        send_req = self.send(Job(Job.STATS), dest = rank)
-                        stat = self.recv(source = rank)
-                    statistics.append( (rank, stat) )
-                with open('data/statistics.txt', 'w+') as f:
-                    f.write(str(statistics))
+                print (to_str(self.resolved[self.initial_pos.pos]) 
+                     + " in "
+                     + str(self.remote[self.initial_pos.pos]) + " moves")
                 self.comm.Abort()
             if self.work.empty():
                 self.add_job(Job(Job.CHECK_FOR_UPDATES))
