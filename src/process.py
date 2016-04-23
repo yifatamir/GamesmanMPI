@@ -68,7 +68,7 @@ class Process:
                 continue
             self.add_job(result)
 
-    def __init__(self, rank, world_size, comm, NP=False):
+    def __init__(self, rank, world_size, comm, NP=False, stats_dir=''):
         self.rank = rank
         self.world_size = world_size
         self.comm = comm
@@ -79,11 +79,18 @@ class Process:
         else:
             self.send = self.comm.send
             self.recv = self.comm.recv
+
+        # TODO: Make cleaner.
+        if stats_dir == None:
+            stats_dir = ''
+        else:
+            if stats_dir[-1] != '/':
+                stats_dir = stats_dir + '/'
         self.initial_pos = GameState(GameState.INITIAL_POS)
         self.root = self.initial_pos.get_hash(self.world_size)
 
         self.work = PriorityQueue()
-        folder_path = 'file://stats/' + str(self.rank) + '/'
+        folder_path = 'file://' + stats_dir + 'stats/' + str(self.rank) + '/'
         self.resolved = Shove(folder_path + 'results')
         self.remote = Shove(folder_path + 'remote')
         # As for recieving, should test them when appropriate
@@ -96,11 +103,11 @@ class Process:
         # with length 2. Then once all the results have been received
         # you can compare the length, and then reduce the results.
         # solving this particular distributed task.
-        self._id = 0                                   # Job id tracker.
-        self._counter = {}                             # A job_id -> Number of results
-                                                       # remaining.
-        self._pending = {}                             # job_id -> [ Job, GameStates, ... ]
-                                                       # Resolved.
+        self._id = 0                                               # Job id tracker.
+        self._counter = {}                                         # A job_id -> Number of results
+                                                                   # remaining.
+        self._pending = {}                                         # job_id -> [ Job, GameStates, ... ]
+                                                                   # Resolved.
         self.stats_dict = Shove(folder_path + 'stats') # Statistics for process.
         self.stats_dict["num_lookups"] = 0
 
