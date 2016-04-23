@@ -10,6 +10,9 @@ else:
     from Queue import PriorityQueue
 import logging
 
+# For storing objects.
+from shove import Shove
+
 class Process:
     """
     Class that defines the behavior what each process should do
@@ -89,8 +92,8 @@ class Process:
         self.root = self.initial_pos.get_hash(self.world_size)
 
         self.work = PriorityQueue()
-        self.resolved = {}
-        self.remote = {}
+        self.resolved = Shove()
+        self.remote = Shove()
         # As for recieving, should test them when appropriate
         # in the run loop.
         self.received = []
@@ -106,7 +109,7 @@ class Process:
                                   # remaining.
         self._pending = {}        # job_id -> [ Job, GameStates, ... ]
                                   # Resolved.
-        self.stats_dict = {}            # Dictionary continue statistics for process.
+        self.stats_dict = Shove() # Dictionary continue statistics for process.
         self.stats_dict["num_lookups"] = 0
 
     def add_job(self, job):
