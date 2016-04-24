@@ -68,17 +68,13 @@ class Process:
                 continue
             self.add_job(result)
 
-    def __init__(self, rank, world_size, comm, NP=False, stats_dir=''):
+    def __init__(self, rank, world_size, comm, stats_dir=''):
         self.rank = rank
         self.world_size = world_size
         self.comm = comm
 
-        if NP:
-            self.send = self.comm.Send # send and recv redeclarations for brevity.
-            self.recv = self.comm.Recv
-        else:
-            self.send = self.comm.send
-            self.recv = self.comm.recv
+        self.send = self.comm.send
+        self.recv = self.comm.recv
 
         # TODO: Make cleaner.
         if stats_dir == None:

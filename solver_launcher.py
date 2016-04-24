@@ -7,8 +7,6 @@ import src.utils
 
 parser = argparse.ArgumentParser()
 parser.add_argument("game_file", help="game to solve for")
-parser.add_argument("-np", "--numpy", help="optimize for numpy array usage",
-                               action="store_true")
 
 parser.add_argument("--debug", help="Enables or disables logging",
                                action="store_true")
@@ -55,8 +53,8 @@ logging.basicConfig(filename='logs/solver_log' + str(comm.Get_rank()) + '.log', 
 
 initial_position = src.utils.game_module.initial_position()
 
-process = Process(comm.Get_rank(), comm.Get_size(), comm, 
-                  NP=args.numpy, stats_dir=args.statsdir)
+process = Process(comm.Get_rank(), comm.Get_size(), 
+                  comm, stats_dir=args.statsdir)
 if process.rank == process.root:
     initial_gamestate = GameState(GameState.INITIAL_POS)
     initial_job = Job(Job.LOOK_UP, initial_gamestate, process.rank, Job.INITIAL_JOB_ID)
