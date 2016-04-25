@@ -161,10 +161,7 @@ def do_move(state, action):
         successor.hand2[piece] -= 1
     return successor
 
-init_pos = State()
-
-
-
+initial_position = lambda: State()
 
 #helpful prints for reference, understanding the code, and debugging
 """
